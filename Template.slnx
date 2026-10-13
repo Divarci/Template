@@ -47,6 +47,10 @@
     <File Path=".claude/agents/reviewer.md" />
     <File Path=".claude/agents/tester.md" />
   </Folder>
+  <Folder Name="/claude/skills/" />
+  <Folder Name="/claude/skills/project-start/">
+    <File Path=".claude/skills/project-start/SKILL.md" />
+  </Folder>
   <Folder Name="/docs/">
     <File Path="docs/version-control.md" />
   </Folder>
