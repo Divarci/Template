@@ -1,0 +1,54 @@
+# Production service definitions. This base file IS the production definition: non-secret production
+# config (environment name, bind URL, ports) is hardcoded here; only secrets/credentials come from
+# .env via ${VAR} (see hard-rules §5).
+# Fixed project name: keeps container/network/volume prefixes stable regardless of the checkout folder name.
+name: template
+
+services:
+  adapter.restful:
+    image: adapterrestful
+    build:
+      context: .
+      dockerfile: api/src/adapters/Adapter.Restful/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
+      CONNECTIONSTRINGS__REDIS: ${REDIS_CONNECTION_STRING}
+      SERILOG__WRITETO__1__ARGS__SERVERURL: ${SEQ_URL}
+      # Authentication against the external/managed production Keycloak. These are non-secret external
+      # endpoint identifiers (the OIDC issuer/authority URL and the API audience id), so they are
+      # stated as base literals rather than pulled from .env. AUTHORITY is the metadata/JWKS discovery
+      # URL and VALIDISSUER is validated against each token's `iss` claim — both are the SAME prod
+      # realm URL (Authority = issuer for a standard realm; no internal/external split in prod).
+      # AUDIENCE/VALIDAUDIENCE are the fixed API audience id. REQUIREHTTPSMETADATA stays true (HTTPS
+      # metadata is mandatory in prod).
+      # PLACEHOLDER: production Keycloak is not provisioned yet — replace REPLACE_WITH_PROD_KEYCLOAK_HOST
+      # in the two realm URLs below with the real prod Keycloak host once it exists.
+      AUTHENTICATION__AUTHORITY: https://REPLACE_WITH_PROD_KEYCLOAK_HOST/realms/template
+      AUTHENTICATION__AUDIENCE: template-api
+      AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDISSUER: https://REPLACE_WITH_PROD_KEYCLOAK_HOST/realms/template
+      AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE: template-api
+      AUTHENTICATION__REQUIREHTTPSMETADATA: "true"
+    ports:
+      - "5001:8080"
+    restart: unless-stopped
+    networks:
+      - template-network
+
+  adapter.scheduler:
+    image: adapterscheduler
+    build:
+      context: .
+      dockerfile: api/src/adapters/Adapter.Scheduler/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
+      CONNECTIONSTRINGS__REDIS: ${REDIS_CONNECTION_STRING}
+    restart: unless-stopped
+    networks:
+      - template-network
+
+networks:
+  template-network:
+    driver: bridge

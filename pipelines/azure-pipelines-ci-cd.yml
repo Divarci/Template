@@ -1,0 +1,85 @@
+# CD — build on the self-hosted machine and deploy.
+# Runs only on push to the deploy branch (DEPLOY_BRANCH); no PR trigger (CI gates PRs on hosted agents).
+trigger:
+  branches:
+    include:
+      # Literal: Azure DevOps does not expand variables in triggers. Must equal DEPLOY_BRANCH below.
+      - master
+
+variables:
+  # Self-hosted agent pool — must match the pool in ADO > Agent Pools ('Default' is the built-in pool).
+  AGENT_POOL: 'Default'
+  # Deploy branch — used by the git reset step. Must equal the trigger branch above.
+  DEPLOY_BRANCH: 'master'
+  COMPOSE_FILE: 'docker-compose.yml'
+  # PROJECT_DIR must point at the repo checkout on the self-hosted machine (the agent's working
+  # copy that is git reset to origin/$(DEPLOY_BRANCH)). Set it as a pipeline variable for this environment.
+  PROJECT_DIR: '/path/to/Template'
+
+pool:
+  # Template expression (compile time) — macro syntax $(...) is not expanded in pool.
+  name: ${{ variables.AGENT_POOL }}
+
+stages:
+  - stage: Deploy
+    displayName: 'Deploy to self-hosted machine'
+    jobs:
+      - job: DeployJob
+        displayName: 'Deploy Template'
+        steps:
+
+          # ── 1. Download .env from Secure Files → place in project folder ─────
+          - task: DownloadSecureFile@1
+            name: envFile
+            displayName: 'Download .env from Secure Files'
+            inputs:
+              secureFile: '.env'   # Must match the filename in ADO > Pipelines > Library > Secure Files
+
+          - script: |
+              cp "$(envFile.secureFilePath)" "$(PROJECT_DIR)/.env"
+              echo ".env copied to $(PROJECT_DIR)/.env"
+            displayName: 'Copy .env to project folder'
+
+          # ── 2. Docker Compose down ───────────────────────────────────────────
+          - script: |
+              cd "$(PROJECT_DIR)"
+              docker compose -f "$(COMPOSE_FILE)" down --remove-orphans
+              echo "Compose down complete."
+            displayName: 'docker compose down'
+
+          # ── 3. Prune all unused Docker resources ─────────────────────────────
+          - script: |
+              docker image prune -a -f
+              docker volume prune -f
+              docker network prune -f
+              docker builder prune -f
+              echo "Docker cleanup complete."
+            displayName: 'docker prune (full clean)'
+
+          # ── 4. Git pull ──────────────────────────────────────────────────────
+          - script: |
+              cd "$(PROJECT_DIR)"
+              git -c http.extraHeader="Authorization: Bearer $(System.AccessToken)" fetch origin
+              git reset --hard "origin/$(DEPLOY_BRANCH)"
+              echo "Git up to date: $(git log -1 --oneline)"
+            displayName: 'git pull (origin/$(DEPLOY_BRANCH))'
+
+          # ── 5. Docker Compose up ─────────────────────────────────────────────
+          - script: |
+              cd "$(PROJECT_DIR)"
+              docker compose -f "$(COMPOSE_FILE)" --env-file .env up -d --build
+              echo "Compose up complete."
+            displayName: 'docker compose up -d --build'
+
+          # ── 6. Remove .env ───────────────────────────────────────────────────
+          - script: |
+              rm -f "$(PROJECT_DIR)/.env"
+              echo ".env removed."
+            displayName: 'Remove .env'
+            condition: always()   # Always runs — .env is removed even if a previous step fails
+
+          # ── 7. Health check ──────────────────────────────────────────────────
+          - script: |
+              cd "$(PROJECT_DIR)"
+              docker compose -f "$(COMPOSE_FILE)" ps
+            displayName: 'Check container status'

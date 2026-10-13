@@ -1,0 +1,43 @@
+meta {
+  name: Create Note
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Bruno happy-path note",
+    "content": "Created by the Bruno collection",
+    "isPinned": false
+  }
+}
+
+vars:post-response {
+  noteId: res.body.data.id
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("returns 201 Created", function() {
+    expect(res.status).to.equal(201);
+  });
+  test("returns a created id", function() {
+    expect(res.body.data.id).to.be.a("string");
+  });
+  test("echoes the created title", function() {
+    expect(res.body.data.title).to.equal("Bruno happy-path note");
+  });
+}

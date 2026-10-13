@@ -1,0 +1,6 @@
+@Adapter.Restful_HostAddress = http://localhost:5037
+
+GET {{Adapter.Restful_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

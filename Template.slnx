@@ -1,0 +1,100 @@
+<Solution>
+  <Folder Name="/api/" />
+  <Folder Name="/api/src/" />
+  <Folder Name="/api/src/adapters/">
+    <Project Path="api/src/adapters/Adapter.Restful/Adapter.Restful.csproj" />
+    <Project Path="api/src/adapters/Adapter.Scheduler/Adapter.Scheduler.csproj" />
+  </Folder>
+  <Folder Name="/api/src/applications/">
+    <Project Path="api/src/applications/App.Processor/App.Processor.csproj" />
+    <Project Path="api/src/applications/App.UseCases/App.UseCases.csproj" />
+  </Folder>
+  <Folder Name="/api/src/core/">
+    <Project Path="api/src/core/Core.Domain/Core.Domain.csproj" />
+    <Project Path="api/src/core/Core.Library/Core.Library.csproj" />
+    <Project Path="api/src/core/Core.Services/Core.Services.csproj" Id="4f2aabe8-ca52-4851-a82e-d3ae94b10244" />
+  </Folder>
+  <Folder Name="/api/src/infrastructures/">
+    <Project Path="api/src/infrastructures/Infra.Caching/Infra.Caching.csproj" />
+    <Project Path="api/src/infrastructures/Infra.Persistence/Infra.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/api/test/" />
+  <Folder Name="/bruno/">
+    <File Path="bruno/bruno.json" />
+    <File Path="bruno/collection.bru" />
+  </Folder>
+  <Folder Name="/bruno/environments/">
+    <File Path="bruno/environments/local.bru" />
+  </Folder>
+  <Folder Name="/bruno/v1/" />
+  <Folder Name="/bruno/v1/Samples/" />
+  <Folder Name="/bruno/v1/Samples/Notes/">
+    <File Path="bruno/v1/Samples/Notes/Create Note.bru" />
+    <File Path="bruno/v1/Samples/Notes/Delete Note.bru" />
+    <File Path="bruno/v1/Samples/Notes/Get Note By Id.bru" />
+    <File Path="bruno/v1/Samples/Notes/List Notes.bru" />
+    <File Path="bruno/v1/Samples/Notes/Update Note.bru" />
+  </Folder>
+  <Folder Name="/claude/">
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/claude/agents/">
+    <File Path=".claude/agents/bruno.md" />
+    <File Path=".claude/agents/bugfixer.md" />
+    <File Path=".claude/agents/coder.md" />
+    <File Path=".claude/agents/deployer.md" />
+    <File Path=".claude/agents/planner.md" />
+    <File Path=".claude/agents/reviewer.md" />
+    <File Path=".claude/agents/tester.md" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/version-control.md" />
+  </Folder>
+  <Folder Name="/docs/api/" />
+  <Folder Name="/docs/api/guidelines/">
+    <File Path="docs/api/guidelines/architecture.md" />
+    <File Path="docs/api/guidelines/coding-standards.md" />
+    <File Path="docs/api/guidelines/domain-driven-design.md" />
+    <File Path="docs/api/guidelines/event-driven-design.md" />
+    <File Path="docs/api/guidelines/hard-rules.md" />
+    <File Path="docs/api/guidelines/philosophy.md" />
+    <File Path="docs/api/guidelines/security.md" />
+    <File Path="docs/api/guidelines/structure.md" />
+    <File Path="docs/api/guidelines/tech-stack.md" />
+  </Folder>
+  <Folder Name="/docs/api/requirements/" />
+  <Folder Name="/docs/api/requirements/business-requirements/" />
+  <Folder Name="/docs/api/requirements/technical-requirements/" />
+  <Folder Name="/docs/bruno/" />
+  <Folder Name="/docs/bruno/guidelines/">
+    <File Path="docs/bruno/guidelines/architecture.md" />
+    <File Path="docs/bruno/guidelines/coding-standards.md" />
+    <File Path="docs/bruno/guidelines/hard-rules.md" />
+    <File Path="docs/bruno/guidelines/philosophy.md" />
+    <File Path="docs/bruno/guidelines/security.md" />
+    <File Path="docs/bruno/guidelines/structure.md" />
+    <File Path="docs/bruno/guidelines/tech-stack.md" />
+  </Folder>
+  <Folder Name="/docs/deployment/" />
+  <Folder Name="/docs/deployment/guidelines/">
+    <File Path="docs/deployment/guidelines/architecture.md" />
+    <File Path="docs/deployment/guidelines/coding-standards.md" />
+    <File Path="docs/deployment/guidelines/hard-rules.md" />
+    <File Path="docs/deployment/guidelines/philosophy.md" />
+    <File Path="docs/deployment/guidelines/security.md" />
+    <File Path="docs/deployment/guidelines/structure.md" />
+    <File Path="docs/deployment/guidelines/tech-stack.md" />
+  </Folder>
+  <Folder Name="/items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="keycloak/realm-template.json" />
+    <File Path="LICENSE.txt" />
+  </Folder>
+  <Folder Name="/pipelines/">
+    <File Path="pipelines/azure-pipelines-ci-cd.yml" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>

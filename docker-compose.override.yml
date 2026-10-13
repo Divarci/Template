@@ -1,0 +1,154 @@
+# Development overrides — auto-merged on top of docker-compose.yml by a bare `docker compose` run.
+# Throwaway dev values only; nothing here reaches production (production uses the base file only).
+# Development is HTTP-only: the container binds HTTP on 8080 with no HTTPS endpoint, so it needs no
+# developer certificate. HTTPS is production-only and is handled in the base docker-compose.yml.
+# The backing services below (postgres, redis, seq) are DEV-ONLY: production reaches managed/external
+# instances via ${VAR} secrets in the base file, so these containers are defined only here.
+services:
+  adapter.restful:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - CONNECTIONSTRINGS__POSTGRES=Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
+      - CONNECTIONSTRINGS__REDIS=redis:6379
+      - SERILOG__WRITETO__1__ARGS__SERVERURL=http://seq:5341
+      # Authentication against the dev Keycloak container. AUTHORITY is the INTERNAL URL the API
+      # uses for OIDC metadata/JWKS discovery (reachable on the compose network). VALIDISSUER is the
+      # EXTERNAL frontend URL that clients use and that Keycloak stamps into every token's `iss`
+      # claim (KC_HOSTNAME below). They differ on purpose — see the keycloak service comment.
+      - AUTHENTICATION__AUTHORITY=http://keycloak:8080/realms/template
+      - AUTHENTICATION__AUDIENCE=template-api
+      - AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDISSUER=http://localhost:8180/realms/template
+      - AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE=template-api
+      - AUTHENTICATION__REQUIREHTTPSMETADATA=false
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seq:
+        # Seq is a log sink only; the Serilog Seq sink degrades gracefully when Seq is down, so the
+        # API must not be gated on Seq being healthy — just started. postgres/redis/keycloak remain
+        # service_healthy because the API genuinely requires them before it starts.
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+
+  adapter.scheduler:
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - CONNECTIONSTRINGS__POSTGRES=Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
+      - CONNECTIONSTRINGS__REDIS=redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Dev-only identity provider (Keycloak) ─────────────────
+  # Prod uses an EXTERNAL/managed Keycloak (issuer/audience literals in the base file); this
+  # container exists only for local development. start-dev runs an ephemeral H2 store, so the realm
+  # is re-imported from ./keycloak on every start and no state persists (no named volume by design).
+  #
+  # Issuer/hostname stability (the classic container-vs-host gotcha): a token's `iss` claim is the
+  # frontend URL. Clients reach Keycloak on the host at http://localhost:8180, but the API reaches it
+  # on the compose network at http://keycloak:8080. If the issuer were derived per-request they would
+  # disagree and token validation would fail. Fix: KC_HOSTNAME pins ONE fixed frontend URL
+  # (http://localhost:8180) so every token carries iss=http://localhost:8180/realms/template, while
+  # KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true lets the API fetch OIDC metadata/JWKS via the internal
+  # keycloak:8080 URL — the issuer stays the fixed frontend URL either way.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      # Throwaway dev bootstrap admin (Keycloak 26 variable names) — unlocks nothing real.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      # Health lives on the management port 9000 and the image ships no curl, so probe /health/ready
+      # over a bash /dev/tcp socket (per Keycloak observability docs).
+      test: >-
+        bash -c 'exec 3<>/dev/tcp/localhost/9000;
+        printf "HEAD /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3;
+        grep -q "200" <&3'
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - template-network
+
+  # ── Dev-only backing services ─────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=template
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d template"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - template-network
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - template-network
+
+  seq:
+    image: datalust/seq:2024.3
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "8081:80"
+    volumes:
+      - seq-data:/data
+    healthcheck:
+      # The datalust/seq:2024.3 image ships no curl/wget, but bash is present. Probe Seq's /health
+      # endpoint on the internal HTTP port 80 over a bash /dev/tcp socket (mirrors the keycloak probe)
+      # and require a 200 status line.
+      test: >-
+        bash -c 'exec 3<>/dev/tcp/localhost/80;
+        printf "GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3;
+        grep -q "200 OK" <&3'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - template-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  seq-data:

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>3b671bd5-5325-47b4-ad4d-1fad5c95f461</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..\..\..</DockerfileContext>
+    <DockerComposeProjectPath>..\..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Transitive security pin: Microsoft.AspNetCore.OpenApi pulls Microsoft.OpenApi 2.0.0,
+         which carries advisory GHSA-v5pm-xwqc-g5wc (2.x vulnerable through 2.7.4).
+         Pin the first patched 2.7.5 (same major, unifies cleanly) to clear NU1903. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.16.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\applications\App.UseCases\App.UseCases.csproj" />
+    <ProjectReference Include="..\..\core\Core.Domain\Core.Domain.csproj" />
+    <ProjectReference Include="..\..\core\Core.Library\Core.Library.csproj" />
+    <ProjectReference Include="..\..\core\Core.Services\Core.Services.csproj" />
+    <ProjectReference Include="..\..\infrastructures\Infra.Caching\Infra.Caching.csproj" />
+    <ProjectReference Include="..\..\infrastructures\Infra.Persistence\Infra.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

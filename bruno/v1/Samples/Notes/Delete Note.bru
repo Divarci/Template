@@ -1,0 +1,20 @@
+meta {
+  name: Delete Note
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/notes/{{noteId}}
+  auth: inherit
+}
+
+assert {
+  res.status: eq 204
+}
+
+tests {
+  test("returns 204 No Content", function() {
+    expect(res.status).to.equal(204);
+  });
+}

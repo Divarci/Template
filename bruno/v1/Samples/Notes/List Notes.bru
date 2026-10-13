@@ -1,0 +1,31 @@
+meta {
+  name: List Notes
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/notes?page=1&pageSize=20
+  auth: inherit
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("returns 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("returns a data array", function() {
+    expect(res.body.data).to.be.an("array");
+  });
+  test("returns pagination metadata", function() {
+    expect(res.body.metadata).to.have.property("pageNumber");
+  });
+}
