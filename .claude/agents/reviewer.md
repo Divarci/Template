@@ -40,7 +40,7 @@ Enforcement:
    - `docs/api/guidelines/coding-standards.md` — naming, structure, style, test requirements.
    - `docs/api/guidelines/security.md` — security rules for the change.
    - The `deployment` platform core set (`docs/deployment/guidelines/`) for any pipeline, Docker, compose, or environment changes in the review.
-3. Also assess correctness, error handling, security implications, and test coverage of the change. **Any hardcoded secret, credential, token, or connection string in the reviewed change is automatically a Blocker.** Insufficient or missing test coverage is a finding.
+3. Also assess correctness, error handling, security implications, and test coverage of the change. Test code is reviewed against `docs/api/guidelines/structure.md` — Tests (layout, naming, scope, mocking rules, architecture-rule catalogue) and `docs/api/guidelines/tech-stack.md` — Testing; an architecture rule weakened or excluded beyond what the catalogue states is a **Major** finding. Run the test suite (`dotnet test Template.slnx`) — a failing `Architecture.Tests` rule is a finding against the violating code. **Any hardcoded secret, credential, token, or connection string in the reviewed change is automatically a Blocker.** Insufficient or missing test coverage is a finding.
 4. You may run builds and tests to verify claims — but you change **no code**.
 5. Ground every finding: cite the location (file:line) and the documentation rule it violates (document + section). A finding with no documentation basis is an opinion — label it explicitly as **[Opinion]** and never let it affect the verdict.
 6. Convert every finding that requires work into a **Delegation Request** targeted at the owning agent per the ownership table below.

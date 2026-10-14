@@ -18,7 +18,15 @@
     <Project Path="api/src/infrastructures/Infra.Caching/Infra.Caching.csproj" />
     <Project Path="api/src/infrastructures/Infra.Persistence/Infra.Persistence.csproj" />
   </Folder>
-  <Folder Name="/api/test/" />
+  <Folder Name="/api/test/">
+    <Project Path="api/test/Adapter.Restful.Tests/Adapter.Restful.Tests.csproj" />
+    <Project Path="api/test/App.Processor.Tests/App.Processor.Tests.csproj" />
+    <Project Path="api/test/App.UseCases.Tests/App.UseCases.Tests.csproj" />
+    <Project Path="api/test/Architecture.Tests/Architecture.Tests.csproj" />
+    <Project Path="api/test/Core.Domain.Tests/Core.Domain.Tests.csproj" />
+    <Project Path="api/test/Core.Library.Tests/Core.Library.Tests.csproj" />
+    <Project Path="api/test/Core.Services.Tests/Core.Services.Tests.csproj" />
+  </Folder>
   <Folder Name="/bruno/">
     <File Path="bruno/bruno.json" />
     <File Path="bruno/collection.bru" />
@@ -96,6 +104,7 @@
     <File Path="LICENSE.txt" />
   </Folder>
   <Folder Name="/pipelines/">
+    <File Path="pipelines/azure-pipelines-api-build-and-test.yml" />
     <File Path="pipelines/azure-pipelines-ci-cd.yml" />
   </Folder>
   <Project Path="docker-compose.dcproj">

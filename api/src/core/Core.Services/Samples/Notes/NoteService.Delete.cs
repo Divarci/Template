@@ -32,10 +32,10 @@ internal sealed partial class NoteService
             softDeleteResult.Message,
             cancellationToken);
 
-        await _cacheInvalidationService.InvalidateEntity(
+        await _cacheInvalidationService.InvalidateEntityAsync(
             CacheKeyHelper.Single(nameof(Note), ("id", note.Id)));
 
-        await _cacheInvalidationService.InvalidateCollections();
+        await _cacheInvalidationService.InvalidateCollectionsAsync();
 
         return Result.Success(
             message: "Note deleted successfully",

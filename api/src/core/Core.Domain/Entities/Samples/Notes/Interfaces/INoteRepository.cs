@@ -14,7 +14,7 @@ public interface INoteRepository : IRepository<Note>
     /// </summary>
     /// <param name="page">The page number (1-based).</param>
     /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="sortBy">The field to sort by. Accepted values: <c>createdDate</c>, <c>title</c>.</param>
+    /// <param name="sortBy">The field to sort by. Accepted values: <c>title</c> (default) and <c>isPinned</c>.</param>
     /// <param name="isAscending">Sort direction: true for ascending, false for descending.</param>
     /// <param name="keyword">Optional keyword for partial match on the Title field.</param>
     /// <param name="isPinned">Optional pin-state filter. When provided, only notes with the matching pin state are returned.</param>

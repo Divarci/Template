@@ -18,7 +18,7 @@ internal sealed partial class NoteUseCase
     {
         int page = pageQuery < 1 || pageQuery is null ? 1 : pageQuery.Value;
         int size = pageSizeQuery < 1 || pageSizeQuery is null ? 20 : pageSizeQuery.Value;
-        string sortBy = string.IsNullOrWhiteSpace(sortByQuery) ? "createdDate" : sortByQuery;
+        string sortBy = string.IsNullOrWhiteSpace(sortByQuery) ? "title" : sortByQuery;
         bool ascending = isAscendingQuery ?? false;
 
         string cacheKey = CacheKeyHelper.Collection(
@@ -28,7 +28,7 @@ internal sealed partial class NoteUseCase
              keyword ?? string.Empty,
              isPinned?.ToString() ?? string.Empty]);
 
-        PaginatedResult<TDto[]> retrievalResult = await _cacheProvider.GetPaginatedCollection(
+        PaginatedResult<TDto[]> retrievalResult = await _cacheProvider.GetPaginatedCollectionAsync(
             cacheKey: cacheKey,
             useCache: true,
             serviceCall: async () => await _noteService.GetPaginatedAsync(

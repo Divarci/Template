@@ -5,8 +5,8 @@ namespace Core.Library.Contracts.DomainEvents.Handle;
 public abstract class DomainEventHandler<TDomainEvent> : IDomainEventHandler<TDomainEvent>
     where TDomainEvent : IDomainEvent
 {
-    public abstract Task Handle(TDomainEvent domainEvent, CancellationToken cancellationToken = default);
+    public abstract Task HandleAsync(TDomainEvent domainEvent, CancellationToken cancellationToken = default);
 
-    public Task Handle(IDomainEvent domainEvent, CancellationToken cancellationToken = default) =>
-        Handle((TDomainEvent)domainEvent, cancellationToken);
+    public Task HandleAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default) =>
+        HandleAsync((TDomainEvent)domainEvent, cancellationToken);
 }

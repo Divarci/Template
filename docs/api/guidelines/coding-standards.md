@@ -211,6 +211,7 @@ The codebase must contain **zero unused artefacts**. Dead code is a maintenance 
 | Private fields | Every injected or assigned private field must be used in at least one method. |
 | Private methods | Every private method must be called from within the class. |
 | Classes & interfaces | Every type must be referenced from at least one other type. |
+| Test helper members | Every member of a `TestData` / `TestSetup` class is used by at least one test in its project. |
 | `.csproj` exclusions | Obsolete source folders are removed via `<Compile Remove="..." />` rather than left as dead files. |
 
 Enforced at code-review time. IDE warnings for unused symbols must be resolved — not suppressed — before a change is committed.
@@ -236,7 +237,7 @@ When two related types feel like they "belong together," put them in sibling fil
 |---|---|
 | Service implementation | `internal sealed partial class` |
 | Use case implementation | `internal sealed partial class` |
-| Repository implementation | `internal sealed partial class` |
+| Repository implementation | `internal sealed partial class` (the generic base `Repository<TEntity>` is `internal partial class` — inherited by every entity repository) |
 | Domain entity | `public sealed partial class` |
 | Value object | `public sealed record` |
 | Domain event | `public sealed record` |
@@ -244,8 +245,11 @@ When two related types feel like they "belong together," put them in sibling fil
 | Request / Response (API) | `public record` / `public class` |
 | Controller | `public class` |
 | Static helper | `internal static class` / `public static class` |
-| Domain event handler | `internal sealed class` |
+| Domain event handler | `internal sealed class` (the contract base `DomainEventHandler<TDomainEvent>` is `public abstract`) |
 | Exception | `public sealed class` |
+| Test class (`<Type><Method>Tests`) | `public sealed class` |
+| Test data helper (`<Subject>TestData`) | `internal static class` |
+| Test setup helper (`<Type>TestSetup`) | `internal sealed class` |
 
 ### Sealed by Default
 
@@ -361,7 +365,7 @@ An entity service is an `internal sealed partial class` split by operation, exac
 - **Guard `Result<T>` reads with `IsFailureAndNoData`, not `IsFailure`.** After an early return on `IsFailureAndNoData`, `.Data` is known to be present, so downstream code uses it directly — never `?? fallback` and never the `!` null-forgiving operator on result data.
 - **The audit-log description is the domain operation's `Result.Message`.** The service passes the message returned by the entity's `Create()`/behaviour/`SoftDelete()` result straight into the audit-log entry — it does **not** hand-write a separate description string. (See `domain-driven-design.md` — domain result messages are the audit trail.)
 - **Partial update = skip null fields.** An update operation applies each `UpdateModel` field only when it is non-null — `if (updateModel.X is not null) { Result r = entity.UpdateX(updateModel.X); if (r.IsFailure) return r; }` — then stages the entity via the repository. A null field means "not supplied — leave unchanged".
-- **Per-operation cache invalidation.** Create invalidates collections only (`InvalidateCollections()`); update and delete invalidate **both** the single-entity key (`InvalidateEntity(CacheKeyHelper.Single(nameof(Entity), ("id", id)))`) **and** collections. A freshly created entity has no cached single entry yet; a mutation may invalidate an existing one and always affects list results.
+- **Per-operation cache invalidation.** Create invalidates collections only (`InvalidateCollectionsAsync()`); update and delete invalidate **both** the single-entity key (`InvalidateEntityAsync(CacheKeyHelper.Single(nameof(Entity), ("id", id)))`) **and** collections. A freshly created entity has no cached single entry yet; a mutation may invalidate an existing one and always affects list results.
 
 ---
 
@@ -395,7 +399,7 @@ Omitting XML documentation from a public interface is a compliance violation.
 
 XML documentation lives **only** on public interfaces (and their members). **No other file carries XML documentation** — not entities, services, use cases, repositories, controllers, models, requests, responses, mappers, event handlers, or configurations. An implementation expresses intent through clear naming and structure; its contract is documented once, on the interface it implements.
 
-The same restraint applies to ordinary comments: non-interface files avoid narrative `//` comment blocks and decorative section banners (`// Properties`, `// Methods`, …). A short inline comment is justified only for genuinely non-obvious rationale the code cannot express itself — not for restating what the code plainly does.
+The same restraint applies to ordinary comments: non-interface files avoid narrative `//` comment blocks and decorative section banners (`// Properties`, `// Methods`, …). A short inline comment is justified only for genuinely non-obvious rationale the code cannot express itself — not for restating what the code plainly does. The one exception is test code, whose `// Arrange` / `// Act` / `// Assert` markers are mandatory (`structure.md` — Tests).
 
 ---
 
@@ -447,8 +451,8 @@ Filtered/sorted/paged reads use `AsNoTracking()` + the `WhereIf(condition, predi
 Reads are cached through `ICacheProvider`; writes invalidate. `Infra.Caching` (Redis, `System.Text.Json`) implements both `ICacheProvider` and `ICacheInvalidationService`.
 
 - **Keys come only from `CacheKeyHelper`** (never hand-built): `Single(entity, (label, value)…)` → `"{entity}:{label}({value})"`; `Collection(entity, method, params…)` → `"collection_{entity}:{method}_{p1_p2_…}"`. Both lower-cased.
-- **Every collection key starts with `collection_`, because `InvalidateCollections()` pattern-deletes `collection_*`.** A list key not built through `CacheKeyHelper.Collection` will never be invalidated — always use the helper.
-- **Read-through shape.** A read use case calls `_cacheProvider.GetSingleAsync(...)` / `GetPaginatedCollection(...)` with `useCache: true`, a `CacheKeyHelper` key, and an expiry from a `_timeout` field on the use case (default `TimeSpan.FromMinutes(30)`). The service delegate runs only on a cache miss.
+- **Every collection key starts with `collection_`, because `InvalidateCollectionsAsync()` pattern-deletes `collection_*`.** A list key not built through `CacheKeyHelper.Collection` will never be invalidated — always use the helper.
+- **Read-through shape.** A read use case calls `_cacheProvider.GetSingleAsync(...)` / `GetPaginatedCollectionAsync(...)` with `useCache: true`, a `CacheKeyHelper` key, and an expiry from a `_timeout` field on the use case (default `TimeSpan.FromMinutes(30)`). The service delegate runs only on a cache miss.
 - **The cached value is the response DTO, not the entity** (see "Controller Result Handling") — the mapper is threaded adapter → use case → service so the cache stores a serialization-friendly `Result<TResponse>` / `PaginatedResult<TResponse[]>`.
 - **Caching is best-effort.** Cache read/write failures are logged (warning + trace id) and degrade to the source — a cache fault never fails the request.
 

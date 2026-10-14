@@ -30,7 +30,7 @@ internal sealed partial class AuditLogUseCase
              keyword ?? string.Empty,
              fromDate?.ToString("O") ?? string.Empty, toDate?.ToString("O") ?? string.Empty]);
 
-        PaginatedResult<TDto[]> retrievalResult = await _cacheProvider.GetPaginatedCollection(
+        PaginatedResult<TDto[]> retrievalResult = await _cacheProvider.GetPaginatedCollectionAsync(
             cacheKey: cacheKey,
             useCache: true,
             serviceCall: async () => await _auditLogService.GetPaginatedAsync(

@@ -22,7 +22,7 @@ internal sealed partial class NoteService
             createResult.Message,
             cancellationToken);
 
-        await _cacheInvalidationService.InvalidateCollections();
+        await _cacheInvalidationService.InvalidateCollectionsAsync();
 
         return createResult;
     }

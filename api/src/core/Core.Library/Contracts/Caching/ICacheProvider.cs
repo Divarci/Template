@@ -31,7 +31,7 @@ public interface ICacheProvider
     /// <param name="serviceCall">The service call to execute</param>
     /// <param name="cacheExpiration">Cache expiration time</param>
     /// <returns>Paginated result containing the collection</returns>
-    Task<PaginatedResult<TDto[]>> GetPaginatedCollection<TDto>(
+    Task<PaginatedResult<TDto[]>> GetPaginatedCollectionAsync<TDto>(
         string cacheKey,
         bool useCache,
         Func<Task<PaginatedResult<TDto[]>>> serviceCall,

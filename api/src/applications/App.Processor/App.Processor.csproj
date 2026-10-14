@@ -15,4 +15,9 @@
     <ProjectReference Include="..\..\core\Core.Domain\Core.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="App.Processor.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
 </Project>

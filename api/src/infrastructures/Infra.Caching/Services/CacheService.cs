@@ -16,7 +16,7 @@ internal sealed class CacheService(
     private readonly ILogger<CacheService> _logger = logger;
     private readonly JsonSerializerOptions _jsonOptions = SerializerOptions.Instance;
 
-    public async Task InvalidateEntity(string cacheKey)
+    public async Task InvalidateEntityAsync(string cacheKey)
     {
         try
         {
@@ -32,7 +32,7 @@ internal sealed class CacheService(
         }
     }
 
-    public async Task InvalidateCollections()
+    public async Task InvalidateCollectionsAsync()
     {
         try
         {
@@ -88,7 +88,7 @@ internal sealed class CacheService(
             statusCode: result.StatusCode);
     }
 
-    public async Task<PaginatedResult<TDto[]>> GetPaginatedCollection<TDto>(
+    public async Task<PaginatedResult<TDto[]>> GetPaginatedCollectionAsync<TDto>(
         string cacheKey,
         bool useCache,
         Func<Task<PaginatedResult<TDto[]>>> serviceCall,

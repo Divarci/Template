@@ -6,15 +6,19 @@ namespace Core.Library.Contracts.Caching;
 public interface ICacheInvalidationService
 {
     /// <summary>
-    /// Invalidates a single entity cache entry using the exact cache key.
+    /// Invalidates a single entity cache entry by deleting the exact cache key.
+    /// The key is built with <c>CacheKeyHelper.Single</c> and has the form <c>{entity}:{label}({value})</c>.
+    /// Invalidation is best-effort: a cache failure is logged and never thrown.
     /// </summary>
-    /// <param name="cacheKey">The cache key</param>
-    Task InvalidateEntity(string cacheKey);
+    /// <param name="cacheKey">The exact cache key of the entry to remove.</param>
+    /// <returns>A task representing the asynchronous invalidate operation.</returns>
+    Task InvalidateEntityAsync(string cacheKey);
 
     /// <summary>
-    /// Invalidates ALL collection caches for the entire entity using pattern matching.
-    /// Clears collections across all services due to potential cross-service data relationships.
-    /// Matches the format: {entityName}_collection_*
+    /// Invalidates every cached collection, for all entities, by deleting all keys that match the pattern <c>collection_*</c>.
+    /// Collection keys are built with <c>CacheKeyHelper.Collection</c> and always start with <c>collection_</c>.
+    /// Invalidation is best-effort: a cache failure is logged and never thrown.
     /// </summary>
-    Task InvalidateCollections();
+    /// <returns>A task representing the asynchronous invalidate operation.</returns>
+    Task InvalidateCollectionsAsync();
 }

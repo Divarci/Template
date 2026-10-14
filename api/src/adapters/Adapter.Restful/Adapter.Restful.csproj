@@ -37,4 +37,9 @@
     <ProjectReference Include="..\..\infrastructures\Infra.Persistence\Infra.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Adapter.Restful.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
 </Project>

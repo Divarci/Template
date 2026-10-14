@@ -1,6 +1,6 @@
 # Structure
 
-Where deployment assets live in the repository and how they are named. This layout is a convention: assets that do not yet exist (e.g. the api CI pipeline, additional Dockerfiles) MUST follow the placement and naming described here when they are added.
+Where deployment assets live in the repository and how they are named. This layout is a convention: assets that do not yet exist (e.g. additional Dockerfiles, CI pipelines for future platforms) MUST follow the placement and naming described here when they are added.
 
 ---
 
@@ -17,7 +17,7 @@ Template/                                   ← repo root
 ├── .env.example                            ← required key names + placeholders (committed)
 ├── pipelines/
 │   ├── azure-pipelines-ci-cd.yml                    ← CD: build on self-hosted machine + deploy
-│   └── azure-pipelines-api-build-and-test.yml       ← CI: api PR gate                            [to add]
+│   └── azure-pipelines-api-build-and-test.yml       ← CI: api PR gate
 ├── keycloak/                               ← realm-as-code (IdP config); imported by the dev Keycloak container
 │   └── realm-template.json                 ← Keycloak realm export — committed source of truth, NO real secrets
 ├── api/

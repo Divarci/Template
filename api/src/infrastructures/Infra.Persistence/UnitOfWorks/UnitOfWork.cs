@@ -116,7 +116,7 @@ internal sealed class UnitOfWork(
     {
         string traceId = Guid.NewGuid().ToString();
 
-        Result domainEventsRegisterResult = await AddDomainEventsAsOutboxMessages(context);
+        Result domainEventsRegisterResult = await AddDomainEventsAsOutboxMessagesAsync(context);
 
         if (domainEventsRegisterResult.IsFailure)
         {
@@ -141,7 +141,7 @@ internal sealed class UnitOfWork(
             statusCode: HttpStatusCode.OK);
     }
 
-    private static async Task<Result> AddDomainEventsAsOutboxMessages(DbContext dbContext)
+    private static async Task<Result> AddDomainEventsAsOutboxMessagesAsync(DbContext dbContext)
     {
         List<Result<OutboxMessage>> outboxMessageResults = [.. dbContext.ChangeTracker
             .Entries<BaseEntity>()

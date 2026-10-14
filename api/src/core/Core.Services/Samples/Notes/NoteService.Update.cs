@@ -55,10 +55,10 @@ internal sealed partial class NoteService
             updateResult.Message,
             cancellationToken);
 
-        await _cacheInvalidationService.InvalidateEntity(
+        await _cacheInvalidationService.InvalidateEntityAsync(
             CacheKeyHelper.Single(nameof(Note), ("id", note.Id)));
 
-        await _cacheInvalidationService.InvalidateCollections();
+        await _cacheInvalidationService.InvalidateCollectionsAsync();
 
         return updateResult;
     }

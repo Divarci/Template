@@ -18,7 +18,7 @@ internal sealed class NoteCreatedDomainEventHandler(
     private readonly INoteService _noteService = noteService;
     private readonly ILogger<NoteCreatedDomainEventHandler> _logger = logger;
 
-    public override async Task Handle(
+    public override async Task HandleAsync(
         NoteCreatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {

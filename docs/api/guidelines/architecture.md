@@ -101,16 +101,17 @@ The architecture grows horizontally without modifying existing projects.
 >
 > - The service owns the per-entity domain orchestration: it calls the domain factory or domain method, validates, and produces the `Result` shape callers depend on.
 > - Business rules that don't fit on the entity (cross-row pre-condition checks, cache-invalidation policy) live on the service. Bypassing it silently strips those rules.
-> - The cache-invalidation discipline (`InvalidateEntity`, `InvalidateCollections`) lives on the service. Going around it leaves stale cache entries.
+> - The cache-invalidation discipline (`InvalidateEntityAsync`, `InvalidateCollectionsAsync`) lives on the service. Going around it leaves stale cache entries.
 >
 > Use cases never call repositories directly, never call `SaveChangesAsync`, never invoke domain factory methods themselves.
 >
-> ### Route 2 — Pure third-party calls go through the infrastructure port directly
+> ### Route 2 — Pure third-party calls go through the infrastructure port
 >
-> If a use-case operation only delegates to an external system (identity provider, message bus, search index, LLM/AI provider, …) and produces **no local entity change**, the call goes `UseCase → IInfraPort` directly. **No service wrapper.**
+> If a use-case operation only delegates to an external system (identity provider, message bus, search index, LLM/AI provider, …) and produces **no local entity change**, the call goes `UseCase → IInfraPort` — either directly, or through a **port service** that wraps exactly that one port (hard rule 4).
 >
-> - There is no domain entity to load, no factory to invoke, no repository to call, no cache to invalidate. A service method here would be a one-line pass-through adding zero behaviour and one layer of indirection.
-> - The infrastructure port (an `I{Function}Provider`-style contract in `Core.Library/Contracts/{Function}/`) is the abstraction the use case depends on; wrapping it in a service-named pass-through hides nothing the port doesn't already hide.
+> - The infrastructure port (an `I{Function}Provider`-style contract in `Core.Library/Contracts/{Function}/`) is the abstraction the use case or port service depends on.
+> - A port service does that one call and nothing else; combining it with entity work or other calls is the use case's job.
+> - No port service exists yet. Its interface location, naming, and folder are agreed with the user when the first one is introduced (hard rule 1) and then recorded in `structure.md`.
 >
 > The use case still wraps the call in `ExecuteTransactionAsync` so that any local writes stay atomic with the operation — even though its *primary* effect is remote. Transaction ownership is always the use case's, never the port's.
 >
@@ -130,7 +131,6 @@ The architecture grows horizontally without modifying existing projects.
 >
 > ### Forbidden
 >
-> - **Wrapping a third-party port in a service method that adds no behaviour.** A service whose body is `return await _port.X(...)` is a Route-2 operation in Route-1 clothing — delete the wrapper, call the port from the use case.
 > - **Calling a repository or `SaveChangesAsync` from a use case.** Always Route 1 → service.
 > - **Skipping the service to avoid writing one for a Route-1 operation.** If the operation is Route 1, the service exists; create it.
 > - **Calling a peer in the same layer** — a use case invoking another use case, or a service invoking another service. Calls only ever go one layer down; cross-entity coordination is the use case's job (hard rule 6).

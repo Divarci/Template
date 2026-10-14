@@ -59,7 +59,7 @@ internal sealed partial class OutboxProcessor
             scope.ServiceProvider);
 
         foreach (IDomainEventHandler domainEventHandler in handlers)
-            await domainEventHandler.Handle(domainEvent, cancellationToken);
+            await domainEventHandler.HandleAsync(domainEvent, cancellationToken);
     }
 
     private static async Task<Result> UpdateAsync(

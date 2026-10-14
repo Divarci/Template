@@ -84,7 +84,7 @@ The `Adapter.Scheduler` project runs a Quartz.NET job (`ProcessOutboxJob`) on a 
    - Resolve the .NET `Type` from `OutboxMessage.Type`.
    - Deserialise `OutboxMessage.Content` into the concrete domain event.
    - Find all registered `IDomainEventHandler<T>` for that event type.
-   - Call each handler's `Handle()` method.
+   - Call each handler's `HandleAsync()` method.
    - Mark the message processed (`ProcessedOnUtc = now`).
    - If a handler throws, log the error and store it in `OutboxMessage.Error`.
 3. `SaveChanges` + `Commit` — processing is also wrapped in a transaction.
@@ -101,7 +101,7 @@ Handlers are discovered via reflection at startup from the `App.Processor` assem
 
 ## Domain Event Handler Contract
 
-Handlers extend `DomainEventHandler<T>` (from `Core.Library/Contracts/DomainEvents/Handle/`) and implement a single `Handle(TDomainEvent, CancellationToken)` method.
+Handlers extend `DomainEventHandler<T>` (from `Core.Library/Contracts/DomainEvents/Handle/`) and implement a single `HandleAsync(TDomainEvent, CancellationToken)` method.
 
 Handlers live in `App.Processor/DomainEvents/<Context>/<Aggregate>/` and follow the naming pattern `{Entity}{Verb}DomainEventHandler`.
 

@@ -14,19 +14,24 @@ The other guidelines (`philosophy`, `architecture`, `domain-driven-design`, `eve
 
 ## 2. Dependencies point inward; every third party lives in `Infra.{Function}`
 
-> Dependencies are strictly inward: adapters, applications, and infrastructure depend on core; core never depends outward. `Core.Library` has **zero** project references. Every third-party integration is its own `Infra.{Function}` project, consumed only through an abstraction declared in `Core.Library/Contracts/`. No third-party-specific code exists anywhere else. (`architecture.md`)
+> Dependencies are strictly inward: adapters, applications, and infrastructure depend on core; core never depends outward. `Core.Library` has **zero** project references. Every third-party integration is its own `Infra.{Function}` project, consumed only through an abstraction declared in `Core.Library/Contracts/`. No third-party-specific code exists anywhere else. (`architecture.md`) The sole exemption is the approved test packages (`tech-stack.md` — Testing), which test projects under `api/test/` reference directly; it never extends to `api/src`.
 
 ---
 
 ## 3. Use-case routing — Route 1 / Route 2
 
-> Work that reads or writes a domain entity in the local database goes `UseCase → Service → Repository`; the service is non-skippable. A pure third-party call that changes no local entity goes `UseCase → infrastructure port` directly, with no service wrapper. Use cases never call repositories directly. (`architecture.md`)
+> Work that reads or writes a domain entity in the local database goes `UseCase → Service → Repository`; the service is non-skippable. A pure third-party call that changes no local entity goes `UseCase → infrastructure port`, either directly or through a port service (§4). Use cases never call repositories directly. (`architecture.md`)
 
 ---
 
-## 4. A service operates on exactly one entity
+## 4. A service does one thing — the use case orchestrates
 
-> A service performs domain operations for a **single entity only**. The one exception is the audit log. Within a service, the only repositories it may call are **its own entity's repository and the audit-log repository** — nothing else: no other entity's repository, no other service, no infrastructure port. Audit-log **creation** happens this way — every entity service writes its own audit entries via the audit-log repository. The dedicated audit-log service exposes **only read** operations; it never creates.
+> A service performs **one operation**; combining operations is the use case's job. A service is one of two kinds:
+>
+> - **Entity service** — domain operations for a **single entity**. It may call only **its own entity's repository, the audit-log repository, and the cache-invalidation contract (`ICacheInvalidationService`)**. Audit-log **creation** happens this way — every entity service writes its own audit entries via the audit-log repository. The dedicated audit-log service exposes **only read** operations; it never creates.
+> - **Port service** — wraps **exactly one** infrastructure contract from `Core.Library/Contracts/` (e.g. sending an email) and calls nothing else.
+>
+> A service never calls another service, another entity's repository, or the unit of work (§5). Anything that combines operations — an entity change plus an external call, several entities, several external calls — is orchestrated by the **use case**, which may call as many services and infrastructure contracts as it needs.
 
 ---
 
@@ -38,7 +43,7 @@ The other guidelines (`philosophy`, `architecture`, `domain-driven-design`, `eve
 
 ## 6. Calls flow one level down only — the use case orchestrates multi-entity work
 
-> Each layer calls **only the layer directly below it — never a peer and never itself**: a controller calls a use case, a use case calls services (or an infrastructure port for a Route-2 operation), a service calls repositories. **A use case never calls another use case; a service never calls another service.** When an operation spans more than one entity, the **use case** orchestrates it — calling each single-entity service in turn inside one unit-of-work transaction. All cross-entity and cross-service coordination is the use case's job.
+> Each layer calls **only the layer directly below it — never a peer and never itself**: a controller calls a use case, a use case calls services and infrastructure contracts, a service calls only what §4 allows. **A use case never calls another use case; a service never calls another service.** When an operation spans more than one entity, the **use case** orchestrates it — calling each single-entity service in turn inside one unit-of-work transaction. All cross-entity and cross-service coordination is the use case's job.
 
 ---
 
