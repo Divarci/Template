@@ -8,7 +8,7 @@ namespace Infra.Persistence.Repositories.System.AuditLogs;
 
 internal sealed partial class AuditLogRepository
 {
-    public async Task<Result<int>> CountByEntityAsync(
+    public async Task<Result<int>> CountFilteredAsync(
         Guid? entityId,
         string? keyword,
         DateTime? fromDate,
@@ -22,8 +22,7 @@ internal sealed partial class AuditLogRepository
                 EF.Functions.ILike(x.Description, $"%{keyword}%"))
             .WhereIf(fromDate.HasValue, x => x.CreatedOnUtc >= fromDate!.Value)
             .WhereIf(toDate.HasValue, x => x.CreatedOnUtc <= toDate!.Value)
-            .CountAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .CountAsync(cancellationToken);
 
         return Result<int>.Success(
             message: "Audit log count retrieved successfully.",

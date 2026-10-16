@@ -11,11 +11,11 @@ Conventions for writing delivery assets: Dockerfiles, Compose files, Azure DevOp
   ```yaml
   # correct
   ASPNETCORE_ENVIRONMENT: Production
-  CONNECTIONSTRINGS__SQL: ${SOME_CONNECTION_STRING}
+  CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
 
   # wrong — padded for alignment
-  ASPNETCORE_ENVIRONMENT:   Production
-  CONNECTIONSTRINGS__SQL:   ${SOME_CONNECTION_STRING}
+  ASPNETCORE_ENVIRONMENT:      Production
+  CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
   ```
 
 - **Two-space indentation** in all YAML. No tabs.
@@ -103,6 +103,7 @@ A single root `.dockerignore` governs every build context. It **must** exclude a
 - **Single bridge network**, named for the project (e.g. `template-network`); every service joins it.
 - **Named volumes** for stateful services only; declare them in the top-level `volumes:` block.
 - **`depends_on`** expresses start ordering between services; keep it accurate as services are added.
+- **`environment` blocks use map syntax** (`KEY: value`), in both the base and the override — never the list form (`- KEY=value`). Quote a value whose YAML type would otherwise change (e.g. `"true"`, `"false"`).
 
 ### Environment variable naming
 
@@ -110,14 +111,14 @@ Two distinct conventions, bridged by Compose:
 
 | Layer | Convention | Example |
 |---|---|---|
-| `.env` keys | flat, `UPPER_SNAKE_CASE`, single underscore | `ASPNETCORE_ENVIRONMENT`, a connection-string key |
-| Container env → .NET config | `SECTION__SUBSECTION__KEY` (double underscore) | `CONNECTIONSTRINGS__SQL`, `AUTHENTICATION__AUDIENCE` |
+| `.env` keys | flat, `UPPER_SNAKE_CASE`, single underscore | `POSTGRES_CONNECTION_STRING`, `REDIS_CONNECTION_STRING` |
+| Container env → .NET config | `SECTION__SUBSECTION__KEY` (double underscore) | `CONNECTIONSTRINGS__POSTGRES`, `AUTHENTICATION__AUDIENCE` |
 
 The double underscore (`__`) is how .NET maps a flat environment variable onto its hierarchical `IConfiguration` (`__` → `:`). Compose reads the flat `.env` key and assigns it to the double-underscore container variable:
 
 ```yaml
 environment:
-  CONNECTIONSTRINGS__SQL: ${SOME_CONNECTION_STRING}
+  CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
 ```
 
 Do not invent alternate casings or separators.
@@ -141,7 +142,7 @@ Do not invent alternate casings or separators.
 - **Pools are explicit.** CI: `pool: { vmImage: ubuntu-latest }`. CD: the self-hosted pool name comes from the `AGENT_POOL` pipeline variable (default `Default`) — never a literal in the `pool:` block.
 - **Variables over literals.** Repeated or environment-specific paths/values (`AGENT_POOL`, `DEPLOY_BRANCH`, `COMPOSE_FILE`, `PROJECT_DIR`, `buildConfiguration`, tool versions) go in the `variables:` block and are referenced as `$(VAR)`.
 - **Multi-line scripts** use the `script: |` block form; keep each command on its own line and echo a short confirmation at the end of a block where it aids the log.
-- **Fail-safe steps** that must run regardless of prior failure carry `condition: always()` — used for `.env` removal and test-result publishing.
+- **Fail-safe steps** that must run regardless of prior failure carry `condition: always()` — used for `.env` removal.
 - **No secret echoing.** Never `echo` a secret value or `cat` the `.env` in a pipeline step.
 
 ---

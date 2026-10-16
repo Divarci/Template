@@ -14,11 +14,11 @@ The remaining deployment guidelines (`philosophy`, `architecture`, `tech-stack`,
 >
 > - Azure DevOps pipeline definitions (`pipelines/azure-pipelines-*.yml`).
 > - `Dockerfile`s (co-located with each adapter's `.csproj`).
-> - `docker-compose.yml`, `docker-compose.override.yml`, and `docker-compose.dcproj`.
+> - `docker-compose.yml`, `docker-compose.override.yml`, and `docker-compose.dcproj` (with its root `launchSettings.json`).
 > - `.dockerignore`, `.env.example`, and environment templates.
 > - Deployment/operations shell scripts.
 >
-> Out of scope — never touched under a deployment task: application source code (`api/src/**/*.cs`), test code, and application configuration files (`appsettings*.json`, `Program.cs`, DI wiring). A change there — even a health-check endpoint or a config-reading line — is `coder` work (or `bugfixer` for defects, `tester` for tests). Return a Delegation Request; never edit it yourself.
+> Out of scope — never touched under a deployment task: application source code (`api/src/**/*.cs`) and application configuration files (`appsettings*.json`, `Program.cs`, DI wiring). A change there — even a health-check endpoint or a config-reading line — is `coder` work (or `bugfixer` for defects). Return a Delegation Request; never edit it yourself.
 
 ---
 
@@ -51,7 +51,7 @@ The remaining deployment guidelines (`philosophy`, `architecture`, `tech-stack`,
 > 1. Download `.env` from Secure Files and copy it into the project directory.
 > 2. `docker compose -f docker-compose.yml down --remove-orphans`
 > 3. Full prune — `docker image prune -a -f`, `docker volume prune -f`, `docker network prune -f`, `docker builder prune -f`.
-> 4. `git -c http.extraHeader="Authorization: Bearer $(System.AccessToken)" fetch origin` then `git reset --hard origin/$(DEPLOY_BRANCH)`.
+> 4. `git -c http.extraHeader="Authorization: Bearer $(System.AccessToken)" fetch origin` then `git reset --hard origin/$(DEPLOY_BRANCH)`, then echo the deployed commit (`git log -1 --oneline`) so the run log records what was deployed.
 > 5. `docker compose -f docker-compose.yml --env-file .env up -d --build`
 > 6. `rm -f .env` with `condition: always()`.
 > 7. `docker compose -f docker-compose.yml ps` (status check).
@@ -62,7 +62,7 @@ The remaining deployment guidelines (`philosophy`, `architecture`, `tech-stack`,
 
 ## 5. `docker-compose.yml` is the production definition; `.env` carries secrets only
 
-> **The base `docker-compose.yml` IS the production definition and states its production configuration explicitly. Non-secret production values — the environment name, the container bind URL, published ports, and other fixed non-secret settings — are hardcoded as literals in the base file. Only secrets and truly external/credential values are injected via `${VAR}` substitution resolved from `.env`.**
+> **The base `docker-compose.yml` IS the production definition and states its production configuration explicitly. Non-secret production values — the environment name, the container bind URL, published ports, and other fixed non-secret settings — are hardcoded as literals in the base file. Only secrets and credential-bearing values are injected via `${VAR}` substitution resolved from `.env`; non-secret endpoint identifiers of external services (e.g. the OIDC issuer/authority URL, the Seq server URL) are base literals.**
 >
 > - **Literal in the base file (production values):**
 >   - Structural, non-secret facts (service names, build context, dockerfile path, network name, `restart` policy, volume names).
@@ -76,13 +76,14 @@ The remaining deployment guidelines (`philosophy`, `architecture`, `tech-stack`,
 
 > **Every Dockerfile builds through multiple stages and runs its final stage as a non-root user.**
 >
-> - .NET services: separate `base` / `build` / `publish` / `final` stages; the runtime stage sets `USER $APP_UID` (the non-root user provided by the `mcr.microsoft.com/dotnet/*` images).> - No final stage may run as `root`, and no Dockerfile may weaken this to "make it work."
+> - .NET services: separate `base` / `build` / `publish` / `final` stages; the runtime stage sets `USER $APP_UID` (the non-root user provided by the `mcr.microsoft.com/dotnet/*` images).
+> - No final stage may run as `root`, and no Dockerfile may weaken this to "make it work."
 
 ---
 
 ## 7. CI on pull request, CD on deploy-branch push
 
-> **Continuous Integration (build + test) runs on every pull request and never deploys. Continuous Delivery (deploy to the self-hosted machine) runs only on push to the deploy branch (pipeline variable `DEPLOY_BRANCH`, default `master`).**
+> **Continuous Integration (build) runs on every pull request and never deploys. Continuous Delivery (deploy to the self-hosted machine) runs only on push to the deploy branch (pipeline variable `DEPLOY_BRANCH`, default `master`).**
 >
 > - CI pipelines set `trigger: none` and gate on `pr: branches: include: ["*"]`; they run on hosted agents and must never contain a deploy step.
 > - The CD pipeline triggers only on the deploy branch (a literal in `trigger:` that must equal `DEPLOY_BRANCH`), has no `pr` trigger, and runs on the self-hosted agent pool named by `AGENT_POOL` (default `Default`).

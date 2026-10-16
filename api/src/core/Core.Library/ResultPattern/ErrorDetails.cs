@@ -1,6 +1,6 @@
 namespace Core.Library.ResultPattern;
 
-public class ErrorDetails
+public sealed class ErrorDetails
 {
     private ErrorDetails(string traceId, List<string> errors)
     {

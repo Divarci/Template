@@ -14,7 +14,13 @@ public interface ITransactionalUnitOfWork
     /// </summary>
     /// <param name="operation">The operation to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous execute transaction operation.</returns>
+    /// <returns>
+    /// The operation's result after the transaction commits when the operation succeeds;
+    /// the operation's failure result after rollback when it fails; the commit failure result
+    /// after rollback when the domain events cannot be converted to outbox messages; or, when an
+    /// exception is thrown, a <c>500 Internal Server Error</c> failure result after rollback whose
+    /// message carries a trace id and no exception detail.
+    /// </returns>
     Task<Result> ExecuteTransactionAsync(
         Func<Task<Result>> operation,
         CancellationToken cancellationToken = default);
@@ -26,7 +32,13 @@ public interface ITransactionalUnitOfWork
     /// <typeparam name="T">The return type of the operation.</typeparam>
     /// <param name="operation">The operation to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous execute transaction operation.</returns>
+    /// <returns>
+    /// The operation's result after the transaction commits when the operation succeeds;
+    /// the operation's failure result after rollback when it fails without data; the commit
+    /// failure (its message and status code) after rollback when the domain events cannot be
+    /// converted to outbox messages; or, when an exception is thrown, a <c>500 Internal Server Error</c>
+    /// failure result after rollback whose message carries a trace id and no exception detail.
+    /// </returns>
     Task<Result<T>> ExecuteTransactionAsync<T>(
         Func<Task<Result<T>>> operation,
         CancellationToken cancellationToken = default);

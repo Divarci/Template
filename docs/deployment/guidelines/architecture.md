@@ -45,8 +45,8 @@ Production  (`docker compose -f docker-compose.yml ...`):   base only  +  .env
 │  Azure DevOps — CI (hosted agent, ubuntu-latest)          │
 │  pr: ["*"]   trigger: none                                 │
 │  ┌────────────────────────┐   ┌────────────────────────┐  │
-│  │ api build + test        │   │ (future) other platforms│  │
-│  │ restore/build/test .slnx│   │ build + test            │  │
+│  │ api build               │   │ (future) other platforms│  │
+│  │ restore/build .slnx     │   │ build                   │  │
 │  └────────────────────────┘   └────────────────────────┘  │
 └──────────────────────────────────────────────────────────┘
       │  gate passes → review → merge to the deploy branch
@@ -125,8 +125,8 @@ Configuration flows through two hops from the secret store to the .NET process:
 ```
 Secure Files (.env)              docker-compose.yml                 container process
 ─────────────────────           ──────────────────────             ──────────────────────
-SOME_CONNECTION_STRING=...  ──►  CONNECTIONSTRINGS__SQL:       ──►  IConfiguration:
-                                   ${SOME_CONNECTION_STRING}          ConnectionStrings:Sql
+POSTGRES_CONNECTION_STRING=... ──► CONNECTIONSTRINGS__POSTGRES:  ──►  IConfiguration:
+                                   ${POSTGRES_CONNECTION_STRING}      ConnectionStrings:Postgres
 ```
 
 1. **`.env` → Compose.** `.env` holds flat, uppercase, single-underscore **secret** keys (e.g. a connection-string key, an API key). `docker-compose.yml` references them as `${VAR}`. Compose substitutes the values at `up` time. Non-secret production config (the environment name, bind URL, ports) is not in `.env` — it is stated as a literal in the base file.

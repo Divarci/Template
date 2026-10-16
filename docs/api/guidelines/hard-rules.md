@@ -14,7 +14,7 @@ The other guidelines (`philosophy`, `architecture`, `domain-driven-design`, `eve
 
 ## 2. Dependencies point inward; every third party lives in `Infra.{Function}`
 
-> Dependencies are strictly inward: adapters, applications, and infrastructure depend on core; core never depends outward. `Core.Library` has **zero** project references. Every third-party integration is its own `Infra.{Function}` project, consumed only through an abstraction declared in `Core.Library/Contracts/`. No third-party-specific code exists anywhere else. (`architecture.md`) The sole exemption is the approved test packages (`tech-stack.md` — Testing), which test projects under `api/test/` reference directly; it never extends to `api/src`.
+> Dependencies are strictly inward: adapters, applications, and infrastructure depend on core; core never depends outward. `Core.Library` has **zero** project references. Every third-party integration is its own `Infra.{Function}` project, consumed only through an abstraction declared in `Core.Library/Contracts/`. No third-party-specific code exists anywhere else. (`architecture.md`) One exemption, and only this one: an **adapter's own host framework and its extensions** — the packages `tech-stack.md` approves for that adapter project (e.g. ASP.NET Core, Asp.Versioning, OpenAPI, JWT Bearer, Serilog/Seq in `Adapter.Restful`; Quartz in `Adapter.Scheduler`) — live in that adapter, because they *are* the host rather than an external system it talks to. The exemption does not extend to `Core.*`, `App.*`, or an `Infra.*` project of another function, and an integration with an external system (database, cache, identity provider API, LLM/AI provider, email, …) is never an adapter exemption.
 
 ---
 
@@ -28,7 +28,7 @@ The other guidelines (`philosophy`, `architecture`, `domain-driven-design`, `eve
 
 > A service performs **one operation**; combining operations is the use case's job. A service is one of two kinds:
 >
-> - **Entity service** — domain operations for a **single entity**. It may call only **its own entity's repository, the audit-log repository, and the cache-invalidation contract (`ICacheInvalidationService`)**. Audit-log **creation** happens this way — every entity service writes its own audit entries via the audit-log repository. The dedicated audit-log service exposes **only read** operations; it never creates.
+> - **Entity service** — domain operations for a **single entity**. It may call only **its own entity's repository, the audit-log repository, and the cache-invalidation contract (`ICacheInvalidationService`)**. Audit-log **creation** happens this way — every entity service writes its own audit entries via the audit-log repository. The dedicated audit-log service exposes **only read** operations; it never creates. The sole exemption is `OutboxMessage` (System sub-domain): marking a message processed writes **no** audit entry — the outbox row itself (`ProcessedOnUtc`, `Error`) is the record, and an audit row per processed event would only add noise.
 > - **Port service** — wraps **exactly one** infrastructure contract from `Core.Library/Contracts/` (e.g. sending an email) and calls nothing else.
 >
 > A service never calls another service, another entity's repository, or the unit of work (§5). Anything that combines operations — an entity change plus an external call, several entities, several external calls — is orchestrated by the **use case**, which may call as many services and infrastructure contracts as it needs.
@@ -61,7 +61,7 @@ The other guidelines (`philosophy`, `architecture`, `domain-driven-design`, `eve
 
 ## 9. Code shape
 
-> **One top-level type per file.** **No space-padding for alignment** (a single space around `=` and between type and name — never aligned columns). Every view-model (**response**) property carries the C# `required` keyword regardless of nullability. Domain models (`CreateModel` / `UpdateModel`) share one shape — property-syntax records with `required` on **every** field; `UpdateModel` fields are additionally nullable (partial-update). **XML documentation appears only on public interfaces — no other file (entities, services, controllers, models, …) carries it.** (`coding-standards.md`, `domain-driven-design.md`)
+> **One top-level type per file.** **No space-padding for alignment** (a single space around `=` and between type and name — never aligned columns). Every view-model (**response**) property carries the C# `required` keyword regardless of nullability. Domain models (`CreateModel` / `UpdateModel`) share one shape — property-syntax records with `required` on **every** field; `UpdateModel` fields are additionally nullable (partial-update). **XML documentation appears only on public interfaces — no other file (entities, services, controllers, models, …) carries it** (tool-generated EF Core migrations excepted). (`coding-standards.md`, `domain-driven-design.md`)
 
 ---
 

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Adapter.Scheduler.Configuration;
+namespace Core.Library.Helpers;
 
-internal static class SerializerOptions
+public static class DomainEventSerializerOptions
 {
     public static readonly JsonSerializerOptions Instance = new()
     {

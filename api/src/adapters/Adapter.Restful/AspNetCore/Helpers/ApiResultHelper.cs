@@ -1,3 +1,4 @@
+using Core.Library.Exceptions;
 using Core.Library.ResultPattern;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -9,7 +10,11 @@ internal static class ApiResultHelper
     public static ProblemDetails Problem(Result result)
     {
         if (result.IsSuccess)
-            throw new InvalidOperationException("Problem can only be built from a failed result with a status code.");
+            throw new TemplateException(
+                assemblyName: "Adapter.Restful",
+                className: nameof(ApiResultHelper),
+                methodName: nameof(Problem),
+                message: "Problem can only be built from a failed result with a status code.");
 
         ProblemDetails problemDetails = new()
         {
@@ -30,6 +35,7 @@ internal static class ApiResultHelper
                 HttpStatusCode.BadRequest => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
                 HttpStatusCode.Unauthorized => "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
                 HttpStatusCode.Forbidden => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
+                HttpStatusCode.Conflict => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.8",
                 HttpStatusCode.UnprocessableEntity => "https://datatracker.ietf.org/doc/html/rfc4918#section-11.2",
                 _ => "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
             };

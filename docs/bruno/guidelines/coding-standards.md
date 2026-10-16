@@ -56,6 +56,7 @@ Rules:
 - **URLs use `{{baseUrl}}`** and captured vars (`{{noteId}}`) — never a hardcoded host or id.
 - **One request per file**; `meta.name` matches the file name; `seq` reflects the dependency chain.
 - **Headers**: only request-specific ones; shared headers are inherited from the collection.
+- **Query parameters**: a request with a query string (e.g. a list with paging/filters) carries a `params:query` block right after the method block, kept identical to the query string in the `url`.
 
 ---
 
@@ -83,11 +84,11 @@ Each request verifies its **success contract** — nothing about failure modes (
   |---|---|---|
   | Create (`POST`) | `201` | created resource (`Result<T>`) |
   | Single (`GET /{id}`) | `200` | resource (`Result<T>`) |
-  | List (`GET`) | `200` | page (`PaginatedResult<T[]>`) |
+  | List (`GET`) | `200` | page (`PaginatedResult<T[]>`: items at `data`, paging info at `metadata`) |
   | Update (`PATCH /{id}`) | `204` | none |
   | Delete (`DELETE /{id}`) | `204` | none |
 
-- **Essential shape** — for bodied responses, assert the key fields exist (e.g. the id on create, the array on list). For `204` responses, assert the status only (there is no body to inspect).
+- **Essential shape** — for bodied responses, assert the key fields exist (e.g. the id on create; the `data` array and the `metadata` paging fields on list). For `204` responses, assert the status only (there is no body to inspect).
 
 Use the declarative `assert` block for the status and simple field checks; use the `tests` block with `expect(...)` for anything that needs a scripted check. Keep assertions to the success contract — do not over-specify volatile values.
 
@@ -96,7 +97,7 @@ Use the declarative `assert` block for the status and simple field checks; use t
 ## Variables
 
 - Reference variables with `{{var}}`; define environment values in `environments/*.bru`, shared constants in `collection.bru`, captured values in `vars:post-response`.
-- Name variables in camelCase (`baseUrl`, `tokenUrl`, `clientId`, `noteId`).
+- Name variables in camelCase (`baseUrl`, `tokenUrl`, `clientId`, `noteId`, `auditLogId`).
 - Never inline a value that belongs in a variable (host, token endpoint, client id, credentials, captured ids).
 
 ---
@@ -112,5 +113,5 @@ Use the declarative `assert` block for the status and simple field checks; use t
 ## Collection & environment files
 
 - `collection.bru` holds the OAuth 2.0 auth (`auth:oauth2`), any base headers, and shared scripts — defined once, inherited everywhere. All OAuth parameters are `{{vars}}`.
-- `environments/local.bru` holds non-secret dev literals (`baseUrl`, `tokenUrl`, `realm`, `clientId`, `username`) and declares secret vars (`password`) **without values** (`security.md`).
+- `environments/local.bru` holds non-secret dev literals only (`baseUrl`, `authorizeUrl`, `tokenUrl`, `callbackUrl`, `clientId`); a secret, if ever needed, is referenced as `{{process.env.<NAME>}}` from `bruno/.env`, never written (`security.md`).
 - `bruno.json` names the collection and Bru version and carries the ignore list (e.g. `.env`, `node_modules`).

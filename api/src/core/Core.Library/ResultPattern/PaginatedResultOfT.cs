@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Core.Library.ResultPattern;
 
-public class PaginatedResult<T> : Result<T>
+public sealed class PaginatedResult<T> : Result<T>
 {
     [JsonConstructor]
     private PaginatedResult(HttpStatusCode statusCode, bool isFailure,

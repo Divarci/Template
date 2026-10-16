@@ -15,7 +15,13 @@ services:
       ASPNETCORE_URLS: http://+:8080
       CONNECTIONSTRINGS__POSTGRES: ${POSTGRES_CONNECTION_STRING}
       CONNECTIONSTRINGS__REDIS: ${REDIS_CONNECTION_STRING}
-      SERILOG__WRITETO__1__ARGS__SERVERURL: ${SEQ_URL}
+      # Seq log sink on the external/managed production Seq. The server URL is a non-secret endpoint
+      # identifier (it grants no access on its own), so it is stated as a base literal rather than
+      # pulled from .env. If prod Seq later requires an API key, that key is a secret and comes from
+      # .env via ${VAR}.
+      # PLACEHOLDER: production Seq is not provisioned yet — replace REPLACE_WITH_PROD_SEQ_HOST with
+      # the real prod Seq URL once it exists.
+      SERILOG__WRITETO__1__ARGS__SERVERURL: https://REPLACE_WITH_PROD_SEQ_HOST
       # Authentication against the external/managed production Keycloak. These are non-secret external
       # endpoint identifiers (the OIDC issuer/authority URL and the API audience id), so they are
       # stated as base literals rather than pulled from .env. AUTHORITY is the metadata/JWKS discovery

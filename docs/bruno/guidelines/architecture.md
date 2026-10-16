@@ -10,7 +10,7 @@ How the **Bruno collection** is put together — the collection root, environmen
 collection root (collection.bru)        ← auth (OAuth 2.0), base headers, collection vars, shared scripts
         │  inherited by everything below
         ▼
-environments (environments/*.bru)       ← per-environment values: baseUrl, token endpoint, realm, clientId, secret password
+environments (environments/*.bru)       ← per-environment values: baseUrl, authorize/token endpoints, callbackUrl, clientId
         │  selected at run time
         ▼
 requests (*.bru, in mirrored folders)   ← one endpoint each: method+url, body, auth:inherit, assertions, tests, captured vars
@@ -48,11 +48,11 @@ The collection root is where cross-cutting behaviour is defined once:
 
   **The token-attachment fields are mandatory, not optional.** `token_placement: header` + `token_header_prefix: Bearer` are what make Bruno emit `Authorization: Bearer <token>`. If `token_header_prefix` is omitted, current Bruno defaults it to an **empty string** and sends `Authorization: <token>` with no scheme — which a JWT bearer API rejects with **401** even though the login succeeded and the token is valid. Always include these fields.
 
-  The **Password (Resource Owner) grant** is the documented alternative for a fully headless run (e.g. Bruno CLI in CI), where a browser login is not possible: it replaces the browser step with a stored `password` secret var (`grant_type: password`, `username`/`password` from vars). Use it only when interactive login is unavailable.
+  The dev user must have a password before the first login — the realm ships `dev-user` without one; set it once in the dev Keycloak admin console (`docs/deployment/guidelines/structure.md` — Keycloak realm-as-code).
 
 - **Base headers / collection vars / shared scripts** — anything every request should carry (e.g. a default `Accept`), or a collection-scoped variable, or a pre-/post-request script shared across the collection.
 
-No secret literal ever appears here — `{{password}}` resolves from a secret variable (`security.md`).
+No secret literal ever appears here (`security.md`).
 
 ---
 
@@ -60,8 +60,8 @@ No secret literal ever appears here — `{{password}}` resolves from a secret va
 
 An environment supplies the concrete values the collection root and requests reference. The committed `local` environment targets the dev stack:
 
-- **Non-secret literals (committed):** `baseUrl` (the API host), `tokenUrl` (Keycloak token endpoint), `realm`, `clientId` (the public client), `username`.
-- **Secret vars (declared, value not committed):** `password` — a Bruno secret var supplied at runtime / via `.env`.
+- **Non-secret literals (committed):** `baseUrl` (the API host), `authorizeUrl` and `tokenUrl` (Keycloak authorization and token endpoints), `callbackUrl` (the local OAuth redirect Bruno listens on), `clientId` (the public client).
+- **Secrets:** none today — Authorization Code + PKCE stores no credential. A secret that is ever needed comes from the git-ignored `bruno/.env` as `{{process.env.<NAME>}}` (`security.md`).
 
 Selecting an environment rebinds every `{{var}}` in the collection, so the same requests run against dev today and another environment later without edits.
 
@@ -85,6 +85,7 @@ Each request `.bru` contains only the blocks it needs:
 
 - **`meta`** — `name`, `type: http`, and `seq` (ordering within its folder; reflects the dependency chain).
 - **method block** (`get`/`post`/`patch`/`delete`) — the `url` built from `{{baseUrl}}` and captured vars; `body: json` and `auth: inherit` where relevant.
+- **`params:query`** — the query parameters of the URL (e.g. paging and filters on a list request), kept in step with the query string.
 - **`headers`** — request-specific headers only (shared ones are inherited).
 - **`body:json`** — the happy-path payload for writes.
 - **`vars:post-response`** — captures values later requests depend on.
@@ -97,7 +98,7 @@ Auth is **not** a per-request block — it is inherited (`hard-rules.md` §3).
 
 ## How it maps to the API
 
-The collection is a mirror of the API surface. A folder path in `bruno/` matches the endpoint's own location — API version → bounded context → aggregate — and each operation (create, single, collection, update, delete) is one request file. Because the API returns the shared `Result` / `PaginatedResult` envelope, captures and assertions read the response through that envelope (e.g. the created id at `res.body.data.id`, a list at `res.body.data`). See `structure.md` for the exact layout and `coding-standards.md` for the request-writing conventions.
+The collection is a mirror of the API surface. A folder path in `bruno/` matches the endpoint's own location — API version → bounded context → aggregate — and each operation (create, single, collection, update, delete) is one request file. Because the API returns the shared `Result` / `PaginatedResult` envelope, captures and assertions read the response through that envelope (e.g. the created id at `res.body.data.id`, a list's items at `res.body.data` and its paging info — `pageNumber`, `pageSize`, `totalCount`, … — at `res.body.metadata`). See `structure.md` for the exact layout and `coding-standards.md` for the request-writing conventions.
 
 ---
 
@@ -106,4 +107,4 @@ The collection is a mirror of the API surface. A folder path in `bruno/` matches
 The collection is runnable two ways, both using only inherited auth and captured variables:
 
 - **Bruno app runner** — pick the `local` environment, run a folder or the whole collection top to bottom.
-- **Bruno CLI** (`bru run`, optional) — the same, headless; suitable for a future CI smoke stage. Because auth and every dependency are inherited/captured, no interactive input is required.
+- **Bruno CLI** (`bru run`, optional) — the same from the command line. Every dependency is inherited/captured, but the token still comes from the one-time browser login, so a fully unattended run (e.g. a CI smoke stage) first needs a non-interactive grant, decided deliberately.

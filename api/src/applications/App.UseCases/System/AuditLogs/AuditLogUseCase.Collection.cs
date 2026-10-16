@@ -20,7 +20,7 @@ internal sealed partial class AuditLogUseCase
     {
         int page = pageQuery < 1 || pageQuery is null ? 1 : pageQuery.Value;
         int size = pageSizeQuery < 1 || pageSizeQuery is null ? 20 : pageSizeQuery.Value;
-        string sortBy = string.IsNullOrWhiteSpace(sortByQuery) ? "createdDate" : sortByQuery;
+        string sortBy = string.IsNullOrWhiteSpace(sortByQuery) ? "createdOnUtc" : sortByQuery;
         bool ascending = isAscendingQuery ?? false;
 
         string cacheKey = CacheKeyHelper.Collection(

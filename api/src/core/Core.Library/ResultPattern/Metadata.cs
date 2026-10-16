@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Core.Library.ResultPattern;
 
-public class Metadata
+public sealed class Metadata
 {
     [JsonConstructor]
     public Metadata(int pageNumber, int pageSize, int totalCount, int pageCount)

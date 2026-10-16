@@ -1,5 +1,6 @@
 using Core.Library.ResultPattern;
 using Core.Library.Validators;
+using System.Net;
 
 namespace Core.Domain.Entities.System.OutboxMessages;
 
@@ -20,18 +21,33 @@ public sealed partial class OutboxMessage
         results.AddRange(
             [
                 message.Type.Validate(
-                    nameof(message.Type),
+                    fieldName: nameof(message.Type),
                     maxLength: 2000),
                 message.Content.Validate(
-                    nameof(message.Content),
+                    fieldName: nameof(message.Content),
                     maxLength: 100000),
                 message.OccurredOnUtc.Validate(
-                    nameof(message.OccurredOnUtc))
+                    fieldName: nameof(message.OccurredOnUtc))
             ]
         );
     }
 
     private static void ValidateBusiness(List<Result> results, OutboxMessage message)
     {
+    }
+
+    private Result ValidateState(string successMessage)
+    {
+        Result validationResult = Validate(this);
+
+        if (validationResult.IsFailure)
+            return Result.Failure(
+                message: validationResult.Message,
+                errorDetails: validationResult.ErrorDetails!,
+                statusCode: validationResult.StatusCode);
+
+        return Result.Success(
+            message: successMessage,
+            statusCode: HttpStatusCode.OK);
     }
 }

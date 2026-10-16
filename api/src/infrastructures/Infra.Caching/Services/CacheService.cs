@@ -24,7 +24,7 @@ internal sealed class CacheService(
 
             _logger.LogDebug("Cached data removed with cache key: '{CacheKey}'.", cacheKey);
         }
-        catch (RedisException ex)
+        catch (Exception ex)
         {
             string traceId = Guid.NewGuid().ToString();
 
@@ -45,7 +45,7 @@ internal sealed class CacheService(
 
             _logger.LogDebug("Cached data collections removed.");
         }
-        catch (RedisException ex)
+        catch (Exception ex)
         {
             string traceId = Guid.NewGuid().ToString();
 
@@ -53,17 +53,17 @@ internal sealed class CacheService(
         }
     }
 
-    public async Task<Result<TEntity>> GetSingleAsync<TEntity>(
-        Func<Task<Result<TEntity>>> serviceMethod,
+    public async Task<Result<TDto>> GetSingleAsync<TDto>(
+        Func<Task<Result<TDto>>> serviceMethod,
         bool useCache,
         string cacheKey,
-        TimeSpan cacheExpiration) where TEntity : class
+        TimeSpan cacheExpiration) where TDto : class
     {
-        if (useCache && await GetAsync<TEntity>(cacheKey) is { } cachedModel)
+        if (useCache && await GetAsync<TDto>(cacheKey) is { } cachedModel)
         {
             _logger.LogDebug("Cache hit for key '{CacheKey}'.", cacheKey);
 
-            return Result<TEntity>.Success(
+            return Result<TDto>.Success(
                 message: "Retrieved from cache",
                 data: cachedModel,
                 statusCode: HttpStatusCode.OK);
@@ -71,20 +71,18 @@ internal sealed class CacheService(
 
         _logger.LogDebug("Cache miss for key '{CacheKey}'. Fetching from service.", cacheKey);
 
-        Result<TEntity> result = await serviceMethod();
+        Result<TDto> result = await serviceMethod();
 
         if (result.IsFailureAndNoData)
-            return Result<TEntity>.Failure(
+            return Result<TDto>.Failure(
                 message: result.Message,
                 statusCode: result.StatusCode);
 
-        TEntity entity = result.Data;
+        await SetAsync(cacheKey, result.Data, cacheExpiration);
 
-        await SetAsync(cacheKey, entity, cacheExpiration);
-
-        return Result<TEntity>.Success(
+        return Result<TDto>.Success(
             message: result.Message,
-            data: entity,
+            data: result.Data,
             statusCode: result.StatusCode);
     }
 
@@ -94,17 +92,17 @@ internal sealed class CacheService(
         Func<Task<PaginatedResult<TDto[]>>> serviceCall,
         TimeSpan cacheExpiration) where TDto : class
     {
-        if (useCache && await GetAsync<PaginatedResult<TDto[]>>(cacheKey) is { } cachedData)
+        if (useCache && await GetAsync<PaginatedResult<TDto[]>>(cacheKey) is { Data: not null, Metadata: not null } cachedData)
         {
             _logger.LogDebug("Cache hit for key '{CacheKey}'.", cacheKey);
 
             return PaginatedResult<TDto[]>.Success(
                 message: "List retrieved from cache",
-                data: cachedData.Data ?? [],
-                pageNumber: cachedData.Metadata?.PageNumber ?? 0,
-                pageSize: cachedData.Metadata?.PageSize ?? 0,
-                totalCount: cachedData.Metadata?.TotalCount ?? 0,
-                pageCount: cachedData.Metadata?.PageCount ?? 0);
+                data: cachedData.Data,
+                pageNumber: cachedData.Metadata.PageNumber,
+                pageSize: cachedData.Metadata.PageSize,
+                totalCount: cachedData.Metadata.TotalCount,
+                pageCount: cachedData.Metadata.PageCount);
         }
 
         _logger.LogDebug("Cache miss for key '{CacheKey}'. Fetching from service.", cacheKey);
@@ -114,16 +112,9 @@ internal sealed class CacheService(
         if (dataResult.IsFailureAndNoData)
             return dataResult;
 
-        if (cacheExpiration.TotalSeconds > 0 && !string.IsNullOrWhiteSpace(cacheKey))
-            await SetAsync(cacheKey, dataResult, cacheExpiration);
+        await SetAsync(cacheKey, dataResult, cacheExpiration);
 
-        return PaginatedResult<TDto[]>.Success(
-            message: dataResult.Message,
-            data: dataResult.Data ?? [],
-            pageNumber: dataResult.Metadata?.PageNumber ?? 0,
-            pageSize: dataResult.Metadata?.PageSize ?? 0,
-            totalCount: dataResult.Metadata?.TotalCount ?? 0,
-            pageCount: dataResult.Metadata?.PageCount ?? 0);
+        return dataResult;
     }
 
     private async Task<T?> GetAsync<T>(string key)
@@ -137,7 +128,7 @@ internal sealed class CacheService(
 
             return JsonSerializer.Deserialize<T>(cachedData, _jsonOptions);
         }
-        catch (RedisException ex)
+        catch (Exception ex)
         {
             string traceId = Guid.NewGuid().ToString();
 
@@ -149,6 +140,13 @@ internal sealed class CacheService(
 
     private async Task SetAsync<T>(string key, T value, TimeSpan slidingExpiration)
     {
+        if (slidingExpiration <= TimeSpan.Zero || string.IsNullOrWhiteSpace(key))
+        {
+            _logger.LogDebug("Cache write skipped for key '{Key}': the key is empty or the expiration is not positive.", key);
+
+            return;
+        }
+
         try
         {
             string serialisedData = JsonSerializer.Serialize(value, _jsonOptions);
@@ -157,7 +155,7 @@ internal sealed class CacheService(
 
             _logger.LogDebug("Cache data stored for key '{Key}'.", key);
         }
-        catch (RedisException ex)
+        catch (Exception ex)
         {
             string traceId = Guid.NewGuid().ToString();
 

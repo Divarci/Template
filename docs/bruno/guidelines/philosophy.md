@@ -18,7 +18,7 @@ The measure of the collection is that a newcomer can open it, pick the environme
 
 ## Happy path first, and — for now — only
 
-The collection's job is to prove the intended flow works: create a thing, read it back, change it, remove it. It is a smoke test of the contract, not an exhaustive negative-testing suite. We deliberately keep it to the happy path (`hard-rules.md` §5) so it stays small, fast, and unambiguous. Exhaustive failure-mode coverage is the province of the automated test suite (`tester`), not the API client collection.
+The collection's job is to prove the intended flow works: create a thing, read it back, change it, remove it. It is a smoke test of the contract, not an exhaustive negative-testing suite. We deliberately keep it to the happy path (`hard-rules.md` §5) so it stays small, fast, and unambiguous. Exhaustive failure-mode coverage is not the API client collection's job.
 
 ---
 

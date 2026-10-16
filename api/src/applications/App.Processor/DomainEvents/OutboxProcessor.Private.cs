@@ -1,12 +1,10 @@
 using Core.Domain.Entities.System.OutboxMessages;
-using Core.Domain.Entities.System.OutboxMessages.Interfaces;
 using Core.Library.Contracts.DomainEvents.Handle;
 using Core.Library.Contracts.DomainEvents.Process;
 using Core.Library.Exceptions;
-using Core.Library.ResultPattern;
+using Core.Library.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Text.Json;
 
 namespace App.Processor.DomainEvents;
@@ -38,7 +36,6 @@ internal sealed partial class OutboxProcessor
 
     private static async Task InitialiseHandlersAsync(
         OutboxMessage outboxMessage,
-        JsonSerializerOptions jsonSerializerOptions,
         IServiceScopeFactory serviceScopeFactory,
         CancellationToken cancellationToken = default)
     {
@@ -50,7 +47,7 @@ internal sealed partial class OutboxProcessor
                 message: $"Unable to resolve type: {outboxMessage.Type}");
 
         IDomainEvent domainEvent = (IDomainEvent)JsonSerializer.Deserialize(
-            outboxMessage.Content, domainEventType, jsonSerializerOptions)!;
+            outboxMessage.Content, domainEventType, DomainEventSerializerOptions.Instance)!;
 
         using IServiceScope scope = serviceScopeFactory.CreateScope();
 
@@ -60,25 +57,5 @@ internal sealed partial class OutboxProcessor
 
         foreach (IDomainEventHandler domainEventHandler in handlers)
             await domainEventHandler.HandleAsync(domainEvent, cancellationToken);
-    }
-
-    private static async Task<Result> UpdateAsync(
-        IOutboxMessageService outboxMessageService,
-        OutboxMessage outboxMessage,
-        Exception? exception)
-    {
-        Result<OutboxMessage> messageResult = await outboxMessageService
-            .GetByIdAsync(outboxMessage.Id);
-
-        if (messageResult.IsFailureAndNoData)
-            return Result.Failure(
-                message: messageResult.Message,
-                statusCode: messageResult.StatusCode);
-
-        messageResult.Data.Update(exception?.ToString());
-
-        return Result.Success(
-            message: "Outbox updated successfully",
-            statusCode: HttpStatusCode.OK);
     }
 }

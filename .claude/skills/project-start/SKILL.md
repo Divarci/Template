@@ -162,7 +162,7 @@ Apply the docs and `CLAUDE.md` changes exactly as approved: identifiers, approve
 Dispatch per `CLAUDE.md` STEP 2 — every brief must contain:
 - The precise task with the exact old → new values from the approved plan, and the files in scope / out of scope.
 - The docs the agent must read itself: its platform core set(s) in full (`docs/api/guidelines/` for `coder`; `docs/deployment/guidelines/` for `deployer`; `docs/bruno/guidelines/` + `docs/api/guidelines/hard-rules.md` for `bruno`) and `docs/version-control.md`.
-- The statement that the task is approved and fully sequenced (execute directly), that **no `git` command** may be run, and that tests are out of scope unless the docs say otherwise.
+- The statement that the task is approved and fully sequenced (execute directly), and that **no `git` command** may be run.
 - Validation the agent must run: `coder` → `dotnet build {Name}.slnx`; `deployer` → `docker compose config` (dev merge) and `docker compose -f docker-compose.yml config` (prod) plus JSON validity of the realm file, no destructive Docker commands; `bruno` → static check that every `{{var}}` is defined.
 
 Handle every Impact Report / Delegation Request per `CLAUDE.md` STEP 3.
@@ -175,7 +175,7 @@ After all agents finish:
 - Confirm the project-brief section is present in `docs/api/guidelines/philosophy.md` (and in the other philosophy files, if chosen) exactly as approved, that every approved 2.6 item was applied, and that no unapproved doc change was made.
 
 ### 4.4 Report
-Report what changed per owner. List any follow-up tasks surfaced by 2.6 (work for `coder` / `deployer` / `bruno` / `tester` that the brief implies) — this skill does not execute them; each needs its own confirmation under `CLAUDE.md` STEP 0. If any verification in 4.3 failed or could not run, say so plainly and **do not** proceed to 4.5 — stop and let the user decide.
+Report what changed per owner. List any follow-up tasks surfaced by 2.6 (work for `coder` / `deployer` / `bruno` that the brief implies) — this skill does not execute them; each needs its own confirmation under `CLAUDE.md` STEP 0. If any verification in 4.3 failed or could not run, say so plainly and **do not** proceed to 4.5 — stop and let the user decide.
 
 ### 4.5 Fresh git history (the template's history is not carried over)
 The new project starts with an empty history: the template's commits (and anything they contain) must not travel to the new project's remote, and the local repository must no longer point at the template's remote.

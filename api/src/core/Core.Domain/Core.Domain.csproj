@@ -10,8 +10,4 @@
     <ProjectReference Include="..\Core.Library\Core.Library.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Core.Domain.Tests" />
-  </ItemGroup>
-
 </Project>

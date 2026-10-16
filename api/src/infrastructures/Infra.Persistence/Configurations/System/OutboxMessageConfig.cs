@@ -24,5 +24,8 @@ internal sealed class OutboxMessageConfig : IEntityTypeConfiguration<OutboxMessa
 
         builder.Property(c => c.Error)
             .IsRequired(false);
+
+        builder.HasIndex(c => new { c.ProcessedOnUtc, c.OccurredOnUtc })
+            .HasDatabaseName("IX_OutboxMessage_ProcessedOnUtc_OccurredOnUtc");
     }
 }

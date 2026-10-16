@@ -57,7 +57,7 @@ Adapter.Restful ───┐
 Adapter.Scheduler ─┤   App.Processor ───► Core.Domain ──► Core.Library
                    ├──► Core.Services ──► Core.Domain ──► Core.Library
                    ├──► Infra.Persistence ─► Core.Domain
-                   └──► Infra.Caching ─────► Core.Domain
+                   └──► Infra.Caching ─────► Core.Library
 ```
 
 Key rules:
@@ -65,7 +65,7 @@ Key rules:
 - `Core.Domain` depends only on `Core.Library`.
 - `Core.Services` depends only on `Core.Domain` — it implements the entity-service interfaces declared there.
 - `App.UseCases` and `App.Processor` depend only on `Core.Domain` — they consume services through the `Core.Domain` interfaces and are unaware of infrastructure and of the concrete `Core.Services`.
-- `Infra.*` projects depend only on `Core.Domain` — they implement its contracts.
+- `Infra.*` projects depend only on `Core.Library` and/or `Core.Domain` — they implement the contracts declared there (`Infra.Persistence` implements `Core.Domain` repository interfaces; `Infra.Caching` implements only `Core.Library` contracts).
 - Adapter projects reference all layers — they are the composition roots that wire everything via DI.
 
 ---
@@ -81,7 +81,7 @@ The architecture grows horizontally without modifying existing projects.
 | `Adapter.{ChannelName}` | `Adapter.Grpc`, `Adapter.GraphQL` |
 | `Adapter.{WorkerName}` | `Adapter.EventConsumer`, `Adapter.DataSync` |
 
-**Infrastructure layer** accepts any number of new provider projects, each named `Infra.{ProviderName}`, depending only on `Core.Domain`, registering through its own `ServiceRegistrar`. Adding a provider requires no changes to any existing project.
+**Infrastructure layer** accepts any number of new provider projects, each named `Infra.{ProviderName}`, depending only on `Core.Library` and/or `Core.Domain`, registering through its own `ServiceRegistrar`. Adding a provider requires no changes to any existing project.
 
 | Pattern | Example additions |
 |---|---|
@@ -154,9 +154,11 @@ The architecture grows horizontally without modifying existing projects.
 > - Depends only on `Core.Library` and `Core.Domain`. Never references another `Infra.*` project, `Core.Services`, `App.*`, or any `Adapter.*`.
 > - Implements interfaces declared in `Core.Library/Contracts/{Function}/`. Those interfaces are the **only** types that leak out of the project.
 > - All other types (options, payloads, mappers, internal services, the implementation class itself) stay `internal sealed`.
-> - Owns its DI wiring via a `ServiceRegistrar.Register{Function}Layer(IServiceCollection, IConfiguration)` extension method. The composition root (`Adapter.Restful/Program.cs`) is the only place that calls these registrars.
+> - Owns its DI wiring via a `ServiceRegistrar.Register{Function}Layer(IServiceCollection, IConfiguration)` extension method. The adapter composition roots (each adapter's `Program.cs`, e.g. `Adapter.Restful/Program.cs`, `Adapter.Scheduler/Program.cs`) are the only places that call these registrars.
 >
-> **Forbidden alternatives:** putting third-party code inside `Core.Services`, `App.*`, `Adapter.*`, or an `Infra.*` project that already exists for a different function. A new third party = a new `Infra.{Function}` project, full stop. No exceptions, no shortcuts, no "we'll move it later." (This is the concrete form of critical note 2 in `structure.md`.)
+> **Adapter host exemption:** an adapter's own host framework and its extensions — the packages `tech-stack.md` approves for that adapter project (ASP.NET Core, Asp.Versioning, OpenAPI, JWT Bearer, Serilog/Seq in `Adapter.Restful`; Quartz in `Adapter.Scheduler`) — live in that adapter (`hard-rules.md` §2). They are the host itself, not an external system the application integrates with.
+>
+> **Forbidden alternatives:** putting third-party code inside `Core.Services`, `App.*`, `Adapter.*` (beyond the host exemption above), or an `Infra.*` project that already exists for a different function. A new third party = a new `Infra.{Function}` project, full stop. No exceptions, no shortcuts, no "we'll move it later." (This is the concrete form of critical note 2 in `structure.md`.)
 
 ---
 

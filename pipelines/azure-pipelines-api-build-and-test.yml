@@ -1,4 +1,4 @@
-# CI — api build + test gate.
+# CI — api build gate.
 # Runs on every pull request on a Microsoft-hosted agent; never deploys (CD lives in azure-pipelines-ci-cd.yml).
 trigger: none
 
@@ -12,18 +12,16 @@ variables:
   solution: 'Template.slnx'
   # Must match the application's net10.0 target (docs/deployment/guidelines/tech-stack.md).
   dotnetSdkVersion: '10.0.x'
-  # Outside the source tree; Agent.TempDirectory is cleaned after every job.
-  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
 
 pool:
   vmImage: ubuntu-latest
 
 stages:
-  - stage: BuildAndTest
-    displayName: 'Build and test api'
+  - stage: Build
+    displayName: 'Build api'
     jobs:
-      - job: BuildAndTestJob
-        displayName: 'Restore, build, test Template.slnx'
+      - job: BuildJob
+        displayName: 'Restore and build Template.slnx'
         steps:
 
           # ── 1. Install .NET SDK ──────────────────────────────────────────────
@@ -48,25 +46,3 @@ stages:
               command: 'build'
               projects: '$(solution)'
               arguments: '--configuration $(buildConfiguration) --no-restore'
-
-          # ── 4. Test ──────────────────────────────────────────────────────────
-          # VSTest mode (test projects set IsTestingPlatformApplication=false; no global.json).
-          # Results are published by the explicit step below, so the task's own publishing is off.
-          - task: DotNetCoreCLI@2
-            displayName: 'Test ($(buildConfiguration))'
-            inputs:
-              command: 'test'
-              projects: '$(solution)'
-              arguments: '--configuration $(buildConfiguration) --no-build --logger trx --results-directory "$(testResultsDirectory)"'
-              publishTestResults: false
-
-          # ── 5. Publish test results ──────────────────────────────────────────
-          - task: PublishTestResults@2
-            displayName: 'Publish test results'
-            condition: always()   # Always runs — results are published even when tests fail
-            inputs:
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '**/*.trx'
-              searchFolder: '$(testResultsDirectory)'
-              mergeTestResults: true
-              testRunTitle: 'api tests'

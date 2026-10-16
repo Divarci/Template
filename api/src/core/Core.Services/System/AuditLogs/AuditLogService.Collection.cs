@@ -22,13 +22,13 @@ internal sealed partial class AuditLogService
                 entityId, page, pageSize,
                 sortBy, isAscending, keyword, fromDate, toDate, cancellationToken);
 
-        if (entityResult.IsFailure)
+        if (entityResult.IsFailureAndNoData)
             return PaginatedResult<TDto[]>.Failure(
                 message: entityResult.Message,
                 statusCode: entityResult.StatusCode);
 
         Result<int> totalCountResult = await _auditLogRepository
-            .CountByEntityAsync(entityId, keyword, fromDate, toDate, cancellationToken);
+            .CountFilteredAsync(entityId, keyword, fromDate, toDate, cancellationToken);
 
         if (totalCountResult.IsFailure)
             return PaginatedResult<TDto[]>.Failure(
@@ -37,7 +37,7 @@ internal sealed partial class AuditLogService
 
         return PaginatedResult<TDto[]>.Success(
             message: "List retrieved successfully",
-            data: mapper(entityResult.Data ?? []),
+            data: mapper(entityResult.Data),
             pageNumber: page,
             pageSize: pageSize,
             totalCount: totalCountResult.Data,

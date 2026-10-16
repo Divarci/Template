@@ -23,8 +23,9 @@ public interface INoteService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Applies a partial update to an existing note and records an audit-log entry.
-    /// Only the non-null fields of <paramref name="updateModel"/> are changed.
+    /// Applies a partial update to an existing note and records one audit-log entry per changed field.
+    /// Only the non-null fields of <paramref name="updateModel"/> are changed; when every field is null,
+    /// nothing is staged, audited, or invalidated.
     /// </summary>
     /// <param name="id">The identifier of the note to update.</param>
     /// <param name="updateModel">The partial-update data; null fields are left unchanged.</param>
@@ -64,7 +65,7 @@ public interface INoteService
     /// <typeparam name="TDto">The DTO type produced by the mapper delegate.</typeparam>
     /// <param name="page">The page number (1-based), already normalised.</param>
     /// <param name="pageSize">The number of items per page, already normalised.</param>
-    /// <param name="sortBy">The field to sort by. Accepted values: <c>title</c> (default) and <c>isPinned</c>.</param>
+    /// <param name="sortBy">The field to sort by. Accepted values: <c>title</c> (default), <c>isPinned</c>; any other value sorts by <c>title</c>.</param>
     /// <param name="isAscending">Sort direction: true for ascending, false for descending.</param>
     /// <param name="keyword">Optional keyword for partial match on the Title field.</param>
     /// <param name="isPinned">Optional pin-state filter. When provided, only notes with the matching pin state are returned.</param>

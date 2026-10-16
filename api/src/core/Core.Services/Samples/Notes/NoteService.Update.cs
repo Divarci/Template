@@ -20,12 +20,16 @@ internal sealed partial class NoteService
 
         Note note = entityResult.Data;
 
+        List<string> auditMessages = [];
+
         if (updateModel.Title is not null)
         {
             Result titleResult = note.UpdateTitle(updateModel.Title);
 
             if (titleResult.IsFailure)
                 return titleResult;
+
+            auditMessages.Add(titleResult.Message);
         }
 
         if (updateModel.Content is not null)
@@ -34,6 +38,8 @@ internal sealed partial class NoteService
 
             if (contentResult.IsFailure)
                 return contentResult;
+
+            auditMessages.Add(contentResult.Message);
         }
 
         if (updateModel.IsPinned is not null)
@@ -42,24 +48,33 @@ internal sealed partial class NoteService
 
             if (pinnedResult.IsFailure)
                 return pinnedResult;
+
+            auditMessages.Add(pinnedResult.Message);
         }
 
-        _noteRepository.Update(note);
+        if (auditMessages.Count == 0)
+            return Result.Success(
+                message: "No changes were applied to the note",
+                statusCode: HttpStatusCode.NoContent);
 
-        Result updateResult = Result.Success(
-            message: "Note updated successfully",
-            statusCode: HttpStatusCode.NoContent);
+        Result updateResult = _noteRepository.Update(note);
 
-        await WriteAuditLogAsync(
-            note.Id,
-            updateResult.Message,
-            cancellationToken);
+        if (updateResult.IsFailure)
+            return updateResult;
+
+        foreach (string auditMessage in auditMessages)
+            await WriteAuditLogAsync(
+                note.Id,
+                auditMessage,
+                cancellationToken);
 
         await _cacheInvalidationService.InvalidateEntityAsync(
             CacheKeyHelper.Single(nameof(Note), ("id", note.Id)));
 
         await _cacheInvalidationService.InvalidateCollectionsAsync();
 
-        return updateResult;
+        return Result.Success(
+            message: "Note updated successfully",
+            statusCode: HttpStatusCode.NoContent);
     }
 }

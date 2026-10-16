@@ -12,8 +12,7 @@ internal partial class Repository<TEntity>
     {
         TEntity? entity = await _context
             .Set<TEntity>()
-            .SingleOrDefaultAsync(e => e.Id == entityId, cancellationToken)
-            .ConfigureAwait(false);
+            .SingleOrDefaultAsync(e => e.Id == entityId, cancellationToken);
 
         if (entity is null)
             return Result<TEntity>.Failure(

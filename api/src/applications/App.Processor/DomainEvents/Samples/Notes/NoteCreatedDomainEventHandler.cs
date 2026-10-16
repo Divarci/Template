@@ -3,6 +3,7 @@ using Core.Domain.Entities.Samples.Notes.DomainEvents;
 using Core.Domain.Entities.Samples.Notes.Interfaces;
 using Core.Library.Contracts.DomainEvents.Handle;
 using Core.Library.Contracts.UnitOfWorks;
+using Core.Library.Exceptions;
 using Core.Library.ResultPattern;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -22,7 +23,7 @@ internal sealed class NoteCreatedDomainEventHandler(
         NoteCreatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        await _unitOfWork.ExecuteTransactionAsync(async () =>
+        Result handleResult = await _unitOfWork.ExecuteTransactionAsync(async () =>
         {
             Result<Note> noteResult = await _noteService.GetByIdAsync(
                 domainEvent.NoteId,
@@ -42,13 +43,19 @@ internal sealed class NoteCreatedDomainEventHandler(
             }
 
             _logger.LogInformation(
-                "NoteCreated event processed for note {NoteId} with title '{Title}'.",
-                noteResult.Data.Id,
-                noteResult.Data.Title);
+                "NoteCreated event processed for note {NoteId}.",
+                noteResult.Data.Id);
 
             return Result.Success(
                 message: "Note created event handled successfully.",
                 statusCode: HttpStatusCode.OK);
         }, cancellationToken);
+
+        if (handleResult.IsFailure)
+            throw new TemplateException(
+                assemblyName: "App.Processor",
+                className: nameof(NoteCreatedDomainEventHandler),
+                methodName: nameof(HandleAsync),
+                message: handleResult.Message);
     }
 }

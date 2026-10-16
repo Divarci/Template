@@ -11,24 +11,24 @@ Template/                                   ← repo root
 ├── bruno/                                  ← Bruno collection root
 │   ├── bruno.json                          ← collection manifest (name, Bru version, ignore list)
 │   ├── collection.bru                      ← collection-level: OAuth 2.0 auth, base headers, shared vars/scripts
+│   ├── .env                                ← secret values, if any — GIT-IGNORED, never committed
 │   ├── environments/
-│   │   └── local.bru                       ← dev values: baseUrl, tokenUrl, realm, clientId, username (+ secret: password)
+│   │   └── local.bru                       ← dev values: baseUrl, authorizeUrl, tokenUrl, callbackUrl, clientId
 │   └── v<N>/                               ← one folder per API version (VersionOne → v1)
 │       └── <Context>/                      ← bounded context (mirrors the API)
-│           └── <Aggregate>/                ← aggregate / resource
+│           └── <Aggregate>/                ← aggregate / resource (plural, e.g. Notes)
 │               ├── folder.bru              ← (optional) folder metadata
-│               ├── Create <Aggregate>.bru
-│               ├── Get <Aggregate> By Id.bru
-│               ├── List <Aggregate>.bru
-│               ├── Update <Aggregate>.bru
-│               └── Delete <Aggregate>.bru
-├── .env                                    ← Bruno secret values (e.g. password) — GIT-IGNORED, never committed
+│               ├── Create <Entity>.bru     ← singular entity name, e.g. Create Note
+│               ├── Get <Entity> By Id.bru
+│               ├── List <Aggregate>.bru    ← plural, e.g. List Notes
+│               ├── Update <Entity>.bru
+│               └── Delete <Entity>.bru
 └── docs/
     └── bruno/
         └── guidelines/                     ← these documents
 ```
 
-Only `bruno/` (plus the git-ignored `.env` for secret values) and these guideline docs are in scope for the `bruno` domain.
+Only `bruno/` (including its git-ignored `.env`) and these guideline docs are in scope for the `bruno` domain.
 
 ---
 
@@ -38,10 +38,10 @@ Only `bruno/` (plus the git-ignored `.env` for secret values) and these guidelin
 |---|---|---|
 | **Collection manifest** | `bruno/bruno.json` | One per collection; names the collection and Bru version. |
 | **Collection root** | `bruno/collection.bru` | The single home of OAuth 2.0 auth and any shared headers/vars/scripts inherited by every request. |
-| **Environments** | `bruno/environments/<name>.bru` | One file per environment; `local` targets the dev stack. Non-secret literals only; secret vars declared without values. |
-| **Request** | `bruno/v<N>/<Context>/<Aggregate>/<Operation> <Aggregate>.bru` | One request per endpoint operation, at the path mirroring the endpoint. |
+| **Environments** | `bruno/environments/<name>.bru` | One file per environment; `local` targets the dev stack. Non-secret literals only; a secret is referenced as `{{process.env.<NAME>}}`, never written. |
+| **Request** | `bruno/v<N>/<Context>/<Aggregate>/<Operation> <Entity or Aggregate>.bru` | One request per endpoint operation, at the path mirroring the endpoint (naming below). |
 | **Folder metadata** | `bruno/…/<Aggregate>/folder.bru` | Optional; folder-scoped settings/vars only. |
-| **Secret values** | `.env` (repo root) | Git-ignored; supplies secret var values (e.g. `password`) at run time. Never committed. |
+| **Secret values** | `bruno/.env` (collection root) | Git-ignored (repo `.gitignore` and `bruno.json` ignore list); Bruno loads it and exposes values as `{{process.env.<NAME>}}`. Never committed. |
 
 ---
 
@@ -51,11 +51,11 @@ The path under `bruno/` matches the endpoint's own location so a request is triv
 
 | API endpoint | Bruno request file |
 |---|---|
-| `Adapter.Restful/Controllers/VersionOne/<Context>/<Aggregate>/…` → `POST /api/v1/<resource>` | `bruno/v1/<Context>/<Aggregate>/Create <Aggregate>.bru` |
-| `GET /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Get <Aggregate> By Id.bru` |
+| `Adapter.Restful/Controllers/VersionOne/<Context>/<Aggregate>/…` → `POST /api/v1/<resource>` | `bruno/v1/<Context>/<Aggregate>/Create <Entity>.bru` |
+| `GET /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Get <Entity> By Id.bru` |
 | `GET /api/v1/<resource>` | `bruno/v1/<Context>/<Aggregate>/List <Aggregate>.bru` |
-| `PATCH /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Update <Aggregate>.bru` |
-| `DELETE /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Delete <Aggregate>.bru` |
+| `PATCH /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Update <Entity>.bru` |
+| `DELETE /api/v1/<resource>/{id}` | `bruno/v1/<Context>/<Aggregate>/Delete <Entity>.bru` |
 
 `v<N>` folds the API's `Version<N>` (`VersionOne` → `v1`). Context and aggregate names match the API's bounded-context / aggregate folders exactly.
 
@@ -63,14 +63,15 @@ The path under `bruno/` matches the endpoint's own location so a request is triv
 
 ## Naming
 
-- **Request `name`** (in `meta`) is human-readable Title Case: `Create Note`, `Get Note By Id`, `List Notes`, `Update Note`, `Delete Note`. The file name matches the request name.
-- **Sequence** (`seq` in `meta`) orders requests within a folder along the dependency chain: create (1) → list/single (2–3) → update (4) → delete (5).
-- **Variables** use camelCase: environment vars (`baseUrl`, `tokenUrl`, `clientId`), captured runtime vars (`noteId`).
+- **Request `name`** (in `meta`) is human-readable Title Case — the singular entity name for single-resource operations and the plural aggregate name for the list: `Create Note`, `Get Note By Id`, `List Notes`, `Update Note`, `Delete Note`. The file name matches the request name.
+- **Sequence** (`seq` in `meta`) orders requests within a folder along the dependency chain: create (1) → list/single (2–3) → update (4) → delete (5). A read-only aggregate with no create endpoint (e.g. `AuditLogs`) orders list (1) → single (2), the single using the id the list captures.
+- **Cross-folder dependencies.** Folders carry no `folder.bru` sequence, so Bruno runs them in alphabetical order. A folder that consumes a variable captured in another folder (e.g. `AuditLogs` filtering by `{{noteId}}` from `Notes`) must therefore sort after its producer; running it on its own requires the producing request to have run earlier in the same Bruno session.
+- **Variables** use camelCase: environment vars (`baseUrl`, `authorizeUrl`, `tokenUrl`, `callbackUrl`, `clientId`), captured runtime vars (`noteId`, `auditLogId`).
 
 ---
 
 ## What does NOT belong here
 
-- Application source, tests, Dockerfiles, compose files, and pipelines are owned by other domains — never placed under `bruno/`.
-- Real secret values never appear in any committed file under `bruno/`; they live only in the git-ignored `.env` (`security.md`).
+- Application source, Dockerfiles, compose files, and pipelines are owned by other domains — never placed under `bruno/`.
+- Real secret values never appear in any committed file under `bruno/`; they live only in the git-ignored `bruno/.env` (`security.md`).
 - These guideline documents are the only files under `docs/bruno/`.

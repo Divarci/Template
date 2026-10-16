@@ -41,14 +41,15 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
     {
         switch (exception)
         {
-            case TemplateException templateEx:
+            case TemplateException templateException:
                 _logger.LogError(
+                    templateException,
                     "TraceId: {TraceId} | Assembly: {Assembly} | Class: {Class} | Method: {Method}: {Message}",
                     traceId,
-                    templateEx.AssemblyName,
-                    templateEx.ClassName,
-                    templateEx.MethodName,
-                    templateEx.Message);
+                    templateException.AssemblyName,
+                    templateException.ClassName,
+                    templateException.MethodName,
+                    templateException.Message);
                 break;
 
             default:

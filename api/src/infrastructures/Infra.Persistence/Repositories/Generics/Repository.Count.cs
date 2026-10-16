@@ -11,8 +11,7 @@ internal partial class Repository<TEntity>
     {
         int count = await _context
             .Set<TEntity>()
-            .CountAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .CountAsync(cancellationToken);
 
         return Result<int>.Success(
             message: "Entity count retrieved successfully.",

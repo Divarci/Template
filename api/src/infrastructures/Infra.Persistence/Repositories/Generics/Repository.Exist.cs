@@ -12,8 +12,7 @@ internal partial class Repository<TEntity>
     {
         bool exists = await _context
             .Set<TEntity>()
-            .AnyAsync(e => e.Id == entityId, cancellationToken)
-            .ConfigureAwait(false);
+            .AnyAsync(e => e.Id == entityId, cancellationToken);
 
         if (!exists)
             return Result<bool>.Failure(

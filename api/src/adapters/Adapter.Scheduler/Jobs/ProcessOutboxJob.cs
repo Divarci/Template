@@ -18,7 +18,7 @@ internal sealed class ProcessOutboxJob(
     public async Task Execute(IJobExecutionContext context)
     {
         Result processResult = await _outboxProcessor
-            .ProcessOutboxMessagesAsync(_outboxOptions.BatchSize, SerializerOptions.Instance);
+            .ProcessOutboxMessagesAsync(_outboxOptions.BatchSize);
 
         if (processResult.IsFailure)
             throw new TemplateException(

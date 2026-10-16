@@ -46,21 +46,11 @@ public sealed partial class OutboxMessage : BaseEntity
             statusCode: HttpStatusCode.Created);
     }
 
-    public Result Update(string? exception)
+    public Result MarkProcessed(string? error)
     {
         ProcessedOnUtc = DateTime.UtcNow;
-        Error = exception;
+        Error = error;
 
-        Result validationResult = Validate(this);
-
-        if (validationResult.IsFailure)
-            return Result.Failure(
-                message: validationResult.Message,
-                errorDetails: validationResult.ErrorDetails!,
-                statusCode: validationResult.StatusCode);
-
-        return Result.Success(
-            message: "Outbox message updated successfully",
-            statusCode: HttpStatusCode.OK);
+        return ValidateState("Outbox message marked as processed");
     }
 }

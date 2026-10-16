@@ -14,8 +14,4 @@
     <ProjectReference Include="..\..\core\Core.Domain\Core.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="App.UseCases.Tests" />
-  </ItemGroup>
-
 </Project>

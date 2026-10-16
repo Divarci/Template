@@ -18,8 +18,7 @@ internal sealed partial class NoteRepository
             .WhereIf(!string.IsNullOrWhiteSpace(keyword), x =>
                 EF.Functions.ILike(x.Title, $"%{keyword}%"))
             .WhereIf(isPinned.HasValue, x => x.IsPinned == isPinned!.Value)
-            .CountAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .CountAsync(cancellationToken);
 
         return Result<int>.Success(
             message: "Note count retrieved successfully.",

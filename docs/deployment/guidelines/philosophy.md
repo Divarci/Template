@@ -40,7 +40,7 @@ Deploy steps assume the previous run may have failed midway. The pipeline prunes
 
 ## Quality gates before merge
 
-Nothing reaches the self-hosted machine that has not first passed automated build and test on a pull request. CI is a gate, not a formality: it runs on every PR against the same solution and test projects the developers run locally, and a red gate blocks the merge. CD is intentionally dumb — it trusts that anything on `master` already passed the gate.
+Nothing reaches the self-hosted machine that has not first passed an automated build on a pull request. CI is a gate, not a formality: it runs on every PR against the same solution the developers build locally, and a red gate blocks the merge. CD is intentionally dumb — it trusts that anything on `master` already passed the gate.
 
 ---
 

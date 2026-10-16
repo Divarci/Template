@@ -92,7 +92,7 @@ Configuration that relaxes transport security is **development-only** and must n
 | Auth `REQUIREHTTPSMETADATA` (identity metadata over HTTP) | May be `false` locally | Must be `true` — HTTPS metadata required |
 | Identity/base URLs | Local/dev addresses inline in the override | Real HTTPS issuer/authority URL as a base literal (non-secret endpoint id; only credential-embedding URLs use `.env`) |
 
-These relaxations live only in `docker-compose.override.yml` (dev) or local user-secrets. The base `docker-compose.yml` carries the production posture via `${VAR}` and must never hardcode a security-weakening value. Never disable TLS verification, open unnecessary ports, or run a container as root to "make something work" — report the conflict instead of shipping it (`hard-rules.md`).
+These relaxations live only in `docker-compose.override.yml` (dev) or local user-secrets. The base `docker-compose.yml` states the production posture directly — non-secret settings such as `REQUIREHTTPSMETADATA: "true"` and the HTTPS endpoint URLs as base literals, credentials via `${VAR}` — and must never hardcode a security-weakening value. Never disable TLS verification, open unnecessary ports, or run a container as root to "make something work" — report the conflict instead of shipping it (`hard-rules.md`).
 
 **Production TLS terminates outside the application**, in the ingress mechanism the project chooses (`architecture.md` — Ingress & TLS; `hard-rules.md` §10). The app stays HTTP internally, and its plain-HTTP port never faces the public internet without TLS in front of it. The ingress's credentials (tunnel tokens, auth keys, private keys) are secrets — delivered via Secure Files / `.env` `${VAR}`, listed in `.env.example` by key name only, never committed or logged. If the chosen ingress lets a third party see decrypted traffic (e.g. a tunnel provider's edge), that trade-off is recorded explicitly when the choice is made.
 
@@ -100,5 +100,5 @@ These relaxations live only in `docker-compose.override.yml` (dev) or local user
 
 ## Local development secrets
 
-- Local secrets use .NET **user-secrets**, mounted read-only into the dev container by the override (the `${APPDATA}/Microsoft/UserSecrets` and `${APPDATA}/ASP.NET/Https` mounts). They never enter Git and never apply in production.
-- HTTPS dev certificates are mounted read-only the same way; production certificates/URLs come from `.env`.
+- Local secrets use .NET **user-secrets**, mounted read-only into the dev container by the override (`${APPDATA}/Microsoft/UserSecrets` → `/home/app/.microsoft/usersecrets`, the non-root user's home). They never enter Git and never apply in production.
+- Development is HTTP-only, so no HTTPS dev certificate is mounted. The application never holds a certificate in any environment: production TLS terminates in the ingress (`hard-rules.md` §10), and production endpoint URLs are base literals in `docker-compose.yml`.

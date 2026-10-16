@@ -4,7 +4,7 @@ namespace Core.Domain.Entities.System.OutboxMessages.Interfaces;
 
 /// <summary>
 /// Service contract for <see cref="OutboxMessage"/> entities.
-/// Coordinates retrieval of pending and individual outbox records on behalf of the outbox processor.
+/// Retrieves pending and individual outbox records and marks them as processed on behalf of the outbox processor.
 /// </summary>
 public interface IOutboxMessageService
 {
@@ -27,4 +27,19 @@ public interface IOutboxMessageService
     Task<Result<OutboxMessage>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks an already-loaded outbox message as processed, recording the handler error if any,
+    /// and stages the change on the repository. The operation is synchronous: it performs no I/O,
+    /// and the change is persisted when the caller's transaction commits.
+    /// </summary>
+    /// <param name="message">The outbox message to mark as processed.</param>
+    /// <param name="error">The handler error details, or <see langword="null"/> when every handler succeeded.</param>
+    /// <returns>
+    /// A <see cref="Result"/> indicating whether the message was marked and staged successfully;
+    /// on success it carries the domain operation's message and a <c>204 No Content</c> status.
+    /// </returns>
+    Result MarkProcessed(
+        OutboxMessage message,
+        string? error);
 }

@@ -25,7 +25,10 @@ internal sealed partial class NoteService
         if (softDeleteResult.IsFailure)
             return softDeleteResult;
 
-        _noteRepository.Update(note);
+        Result updateResult = _noteRepository.Update(note);
+
+        if (updateResult.IsFailure)
+            return updateResult;
 
         await WriteAuditLogAsync(
             note.Id,

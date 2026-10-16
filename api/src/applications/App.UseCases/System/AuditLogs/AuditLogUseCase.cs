@@ -10,6 +10,5 @@ internal sealed partial class AuditLogUseCase(
     private readonly IAuditLogService _auditLogService = auditLogService;
     private readonly ICacheProvider _cacheProvider = cacheProvider;
 
-    // Audit log data changes frequently, so a shorter cache duration is appropriate.
     private readonly TimeSpan _timeout = TimeSpan.FromMinutes(30);
 }

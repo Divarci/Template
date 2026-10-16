@@ -15,7 +15,10 @@ internal sealed partial class NoteService
         if (createResult.IsFailureAndNoData)
             return createResult;
 
-        await _noteRepository.CreateAsync(createResult.Data, cancellationToken);
+        Result<Note> persistResult = await _noteRepository.CreateAsync(createResult.Data, cancellationToken);
+
+        if (persistResult.IsFailureAndNoData)
+            return persistResult;
 
         await WriteAuditLogAsync(
             createResult.Data.Id,

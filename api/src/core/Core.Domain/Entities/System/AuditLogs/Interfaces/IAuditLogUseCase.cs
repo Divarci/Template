@@ -15,14 +15,14 @@ public interface IAuditLogUseCase
     /// <param name="entityId">Optional entity ID. When provided, only logs for that entity are returned; when null, all logs are returned.</param>
     /// <param name="pageQuery">The raw page number from the query string (null defaults to 1).</param>
     /// <param name="pageSizeQuery">The raw page size from the query string (null defaults to 20).</param>
-    /// <param name="sortByQuery">The raw sort field from the query string (null defaults to <c>createdDate</c>).</param>
-    /// <param name="isAscendingQuery">The raw sort direction from the query string (null defaults to false — most recent first).</param>
+    /// <param name="sortByQuery">The raw sort field from the query string. Accepted values: <c>createdOnUtc</c>, <c>entityId</c> (null or blank defaults to <c>createdOnUtc</c>).</param>
+    /// <param name="isAscendingQuery">The raw sort direction from the query string (null defaults to false — descending).</param>
     /// <param name="keyword">Optional keyword for partial match on the Description field.</param>
     /// <param name="fromDate">Optional lower bound on the Created timestamp (UTC).</param>
     /// <param name="toDate">Optional upper bound on the Created timestamp (UTC).</param>
     /// <param name="mapper">A delegate that maps an array of <see cref="AuditLog"/> entities to an array of DTOs.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A paginated result containing the audit log DTOs for the entity.</returns>
+    /// <returns>A paginated result containing the audit log DTOs, scoped to <paramref name="entityId"/> when supplied (all logs otherwise).</returns>
     Task<PaginatedResult<TDto[]>> GetPaginatedAsync<TDto>(
         Guid? entityId,
         int? pageQuery,

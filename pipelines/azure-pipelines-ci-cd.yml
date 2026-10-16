@@ -7,13 +7,13 @@ trigger:
       - master
 
 variables:
-  # Self-hosted agent pool — must match the pool in ADO > Agent Pools ('Default' is the built-in pool).
+  # Self-hosted agent pool — must match the pool name in ADO > Agent Pools.
   AGENT_POOL: 'Default'
   # Deploy branch — used by the git reset step. Must equal the trigger branch above.
   DEPLOY_BRANCH: 'master'
   COMPOSE_FILE: 'docker-compose.yml'
-  # PROJECT_DIR must point at the repo checkout on the self-hosted machine (the agent's working
-  # copy that is git reset to origin/$(DEPLOY_BRANCH)). Set it as a pipeline variable for this environment.
+  # PROJECT_DIR is the repo checkout on the self-hosted machine (the agent's working copy that is
+  # git reset to origin/$(DEPLOY_BRANCH)). If the checkout lives elsewhere, change this value here.
   PROJECT_DIR: '/path/to/Template'
 
 pool:

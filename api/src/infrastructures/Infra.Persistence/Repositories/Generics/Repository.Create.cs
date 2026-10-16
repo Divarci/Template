@@ -16,8 +16,7 @@ internal partial class Repository<TEntity>
 
         await _context
             .Set<TEntity>()
-            .AddAsync(entity, cancellationToken)
-            .ConfigureAwait(false);
+            .AddAsync(entity, cancellationToken);
 
         return Result<TEntity>.Success(
             message: "Entity created successfully.",
@@ -36,8 +35,7 @@ internal partial class Repository<TEntity>
 
         await _context
             .Set<TEntity>()
-            .AddRangeAsync(entityCollection, cancellationToken)
-            .ConfigureAwait(false);
+            .AddRangeAsync(entityCollection, cancellationToken);
 
         return Result.Success(
             message: "Entities created successfully.",

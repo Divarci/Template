@@ -37,7 +37,7 @@ public interface IRepository<TEntity>
     /// Updates an existing entity in the repository.
     /// </summary>
     /// <param name="entity">The entity to update.</param>
-    /// <returns>A result containing the updated entity.</returns>
+    /// <returns>A result indicating the outcome of the operation.</returns>
     Result Update(TEntity entity);
 
     /// <summary>

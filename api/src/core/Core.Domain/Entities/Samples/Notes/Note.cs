@@ -2,6 +2,7 @@ using Core.Domain.Entities.Samples.Notes.DomainEvents;
 using Core.Domain.Entities.Samples.Notes.Models;
 using Core.Library.Abstractions;
 using Core.Library.Abstractions.Interfaces;
+using Core.Library.Exceptions;
 using Core.Library.ResultPattern;
 using System.Net;
 
@@ -26,7 +27,12 @@ public sealed partial class Note : BaseEntity, IHaveSoftDelete
 
     public static Result<Note> Create(NoteCreateModel createModel)
     {
-        ArgumentNullException.ThrowIfNull(createModel);
+        if (createModel is null)
+            throw new TemplateException(
+                assemblyName: "Core.Domain",
+                className: nameof(Note),
+                methodName: nameof(Create),
+                message: "Create model cannot be null.");
 
         Note note = new(
             id: Guid.NewGuid(),

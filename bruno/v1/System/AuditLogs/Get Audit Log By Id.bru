@@ -1,0 +1,28 @@
+meta {
+  name: Get Audit Log By Id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/audit-logs/{{auditLogId}}
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("returns 200 OK", function() {
+    expect(res.status).to.equal(200);
+  });
+  test("returns the requested audit log", function() {
+    expect(res.body.data.id).to.equal(bru.getVar("auditLogId"));
+  });
+  test("returns the audit log fields", function() {
+    expect(res.body.data.entityId).to.be.a("string");
+    expect(res.body.data.description).to.be.a("string");
+    expect(res.body.data).to.have.property("createdOnUtc");
+  });
+}

@@ -33,7 +33,7 @@ Application- and runtime-level security rules for the `api` platform. Subordinat
 
 ## Error Handling & Output
 
-- **A single global boundary.** `GlobalExceptionHandler` catches every unhandled exception, emits a `500` `ProblemDetails`, attaches a `traceId`, and logs the failure. Domain exceptions are logged with structured context; unexpected exceptions with full stack trace.
+- **A single global boundary.** `GlobalExceptionHandler` catches every unhandled exception, emits a `500` `ProblemDetails`, attaches a `traceId`, and logs the failure. A `TemplateException` — an exception the application throws deliberately (`coding-standards.md` — Exceptions) — is logged with its structured context (assembly, class, method) **and** the exception itself (stack trace, inner exception); any other exception is logged as unhandled with its full stack trace. The two use distinct log templates, so "thrown by us" and "unexpected" stay distinguishable. Stack traces stay in server logs, never in responses.
 - **Never leak internals to the client.** Responses must not carry stack traces, inner-exception text, connection strings, or any secret. The `traceId` correlates a terse client message with the detailed server log; `Result.Message` stays concise and non-leaky, and failed `Result`s are translated to RFC 7807 `ProblemDetails` via the shared result helper.
 - **Fail closed.** On any ambiguity about whether an operation is permitted or an input is valid, the request is rejected — not allowed through.
 
@@ -43,7 +43,7 @@ Application- and runtime-level security rules for the `api` platform. Subordinat
 
 - **Treat the datastore as sensitive by default.** There is no "public" tier; all stored data is protected behind authentication.
 - **Least-privilege database access.** The application connects to PostgreSQL with an account scoped to only the schemas/operations it needs; the connection string is a secret supplied via environment (deployment security doc), never in `appsettings.json` or code.
-- **Secrets never live in the application.** No credential, token, API key, or connection string appears in source, `appsettings*.json`, logs, or responses. Runtime configuration is bound from environment into `internal sealed record` options types; secret *values* come only from the environment (local user-secrets in dev, `.env` in prod).
+- **Secrets never live in the application.** No credential, token, API key, or connection string appears in source, `appsettings*.json`, logs, or responses. Runtime configuration is bound from environment into `internal sealed record` options types — or, for a framework-owned options type such as `JwtBearerOptions`, through an `internal sealed class` implementing `IConfigureNamedOptions<T>` (`JwtBearerConfigurationOptions`); secret *values* come only from the environment (local user-secrets in dev, `.env` in prod).
 
 ---
 

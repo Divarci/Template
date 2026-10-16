@@ -27,12 +27,12 @@ internal sealed partial class AuditLogRepository
             .WhereIf(fromDate.HasValue, x => x.CreatedOnUtc >= fromDate!.Value)
             .WhereIf(toDate.HasValue, x => x.CreatedOnUtc <= toDate!.Value);
 
-        bool sortByDescription = string.Equals(sortBy, "description", StringComparison.OrdinalIgnoreCase);
+        bool sortByEntityId = string.Equals(sortBy, "entityId", StringComparison.OrdinalIgnoreCase);
 
-        IOrderedQueryable<AuditLog> orderedQuery = sortByDescription
+        IOrderedQueryable<AuditLog> orderedQuery = sortByEntityId
             ? (isAscending
-                ? query.OrderBy(x => x.Description)
-                : query.OrderByDescending(x => x.Description))
+                ? query.OrderBy(x => x.EntityId)
+                : query.OrderByDescending(x => x.EntityId))
             : (isAscending
                 ? query.OrderBy(x => x.CreatedOnUtc)
                 : query.OrderByDescending(x => x.CreatedOnUtc));

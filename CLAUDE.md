@@ -9,7 +9,7 @@
 
 **Version control — standing rule (applies to every prompt, delegatable or not).** Never run any command that starts with `git` — read-only ones included — unless the user has explicitly asked for that specific operation in the current conversation. The full policy lives in `docs/version-control.md`.
 
-**Every prompt begins with STEP 0 — prompt analysis — and nothing else may precede it.** STEP 0's decisive output is whether the prompt contains a task that belongs to a sub-agent's domain (planning, application code, bug fix, tests, code review, delivery/infrastructure, or the Bruno API test collection).
+**Every prompt begins with STEP 0 — prompt analysis — and nothing else may precede it.** STEP 0's decisive output is whether the prompt contains a task that belongs to a sub-agent's domain (planning, application code, bug fix, code review, delivery/infrastructure, or the Bruno API test collection).
 
 - **If it does not** — ordinary conversation, an unrelated/off-topic subject, a general question, or a custom/ad-hoc request to the AI — then STEP 1 → STEP 3 and the mandatory documentation read **do not apply**. Respond to the user normally. Never force platform reads or agent delegation onto a prompt that carries no agent task.
 - **If it does** — **first confirm the task with the user**, and only then does the rest become mandatory: **no code, no plan, no delegation, and no final work output is produced until (1) the target platform(s) have been identified — STEP 0 — and (2) the platform-scoped documentation for every identified platform has been read in full — STEP 1 — both in the current turn.** The only work permitted before the STEP 1 read is the STEP 0 analysis needed to decide *which* documentation to read. Within this branch there are no exceptions, no shortcuts, and no urgency override; skipping or reordering STEP 0 → STEP 1 is a critical failure.
@@ -22,8 +22,8 @@ At the start of **every** prompt, **before reading any guideline document**, ana
 
 | Dimension | Question to answer |
 |---|---|
-| **Delegatable work?** | Does the prompt contain a task owned by a sub-agent — planning, application code, bug fix, tests, code review, delivery/infrastructure, or the Bruno API test collection (`planner`/`coder`/`bugfixer`/`tester`/`reviewer`/`deployer`/`bruno`)? **This is the gating decision.** |
-| **Intent** | New feature / bug fix / refactor / architecture-design / question / code review / testing / delivery-infrastructure? |
+| **Delegatable work?** | Does the prompt contain a task owned by a sub-agent — planning, application code, bug fix, code review, delivery/infrastructure, or the Bruno API test collection (`planner`/`coder`/`bugfixer`/`reviewer`/`deployer`/`bruno`)? **This is the gating decision.** |
+| **Intent** | New feature / bug fix / refactor / architecture-design / question / code review / delivery-infrastructure? |
 | **Target platform(s)** | *(Only when there is delegatable work.)* Which platform(s) does the task touch — `api`, `deployment`, `bruno`? One, several, or **all**. `deployment` covers all delivery/infrastructure (CI/CD, Docker, compose, environments, secrets); `bruno` covers the Bruno API test collection. This selection drives the STEP 1 reads. |
 | **Scope** | Which bounded contexts, layers, projects, agents, or components are affected within each platform? |
 | **Complexity** | Single-agent task, or multi-agent orchestration (sequential / parallel)? |
@@ -31,12 +31,12 @@ At the start of **every** prompt, **before reading any guideline document**, ana
 ### Routing gate — decides whether STEP 1 → STEP 3 run at all
 
 - **No delegatable work** → ordinary conversation, a general question, or an ad-hoc request. **STEP 1 → STEP 3 and the mandatory read do not apply — respond normally, as a regular assistant.**
-- **Delegatable work detected** → **confirm with the user before any read or delegation.** A prompt may bundle **several** tasks across agents — capture **all**, not just the first. Restate each task, the agent it maps to (`planner`/`coder`/`bugfixer`/`tester`/`reviewer`/`deployer`/`bruno`), and (if more than one) the proposed order (sequential vs. parallel per dependencies), as **one consolidated confirmation**. Proceed only on the go-ahead; act on whatever subset is approved and drop the rest; re-confirm if scope changes. Once confirmed, STEP 1 → STEP 3 and the PRIME DIRECTIVE are mandatory for every confirmed task.
+- **Delegatable work detected** → **confirm with the user before any read or delegation.** A prompt may bundle **several** tasks across agents — capture **all**, not just the first. Restate each task, the agent it maps to (`planner`/`coder`/`bugfixer`/`reviewer`/`deployer`/`bruno`), and (if more than one) the proposed order (sequential vs. parallel per dependencies), as **one consolidated confirmation**. Proceed only on the go-ahead; act on whatever subset is approved and drop the rest; re-confirm if scope changes. Once confirmed, STEP 1 → STEP 3 and the PRIME DIRECTIVE are mandatory for every confirmed task.
 - **Mixed prompts** — when a prompt contains **both** conversation and delegatable work, answer the conversational part normally, then surface the delegatable task(s) and confirm them before starting.
 - **When unsure** whether a prompt crosses into agent work, ask **one targeted clarifying question** rather than either forcing the workflow or skipping it.
 
 > **Confirm — single task:** "This is a bug fix in the API domain layer → `bugfixer`. Shall I proceed?"
-> **Confirm — multi-task:** "This spans three tasks: (1) add the endpoint → `coder` (api); (2) cover it with tests → `tester`; (3) wire the pipeline stage → `deployer` (deployment). Proposed order: 1 → 2 → 3 (2 and 3 can run in parallel after 1). Proceed with all three, or a subset?"
+> **Confirm — multi-task:** "This spans three tasks: (1) add the endpoint → `coder` (api); (2) add its Bruno request → `bruno`; (3) wire the new configuration key → `deployer` (deployment). Proposed order: 1 → 2 → 3 (2 and 3 can run in parallel after 1). Proceed with all three, or a subset?"
 
 Rules *(apply only to the delegatable-work branch)*:
 
@@ -61,8 +61,8 @@ Using the platform(s) identified in STEP 0, read **in full**, in the listed orde
 | 4 | `tech-stack.md` | Approved technologies and versions |
 | 5 | `domain-driven-design.md` | Bounded contexts, aggregates, entities, value objects, ubiquitous language |
 | 6 | `event-driven-design.md` | Event naming, publishing, handling, idempotency, messaging conventions |
-| 7 | `structure.md` | Project structure and layer organization (adapters, applications, core, infrastructures, testing) |
-| 8 | `coding-standards.md` | Code style, naming, project structure, testing standards |
+| 7 | `structure.md` | Project structure and layer organization (adapters, applications, core, infrastructures) |
+| 8 | `coding-standards.md` | Code style, naming, project structure |
 | 9 | `security.md` | Security rules and requirements |
 
 **Deployment — `docs/deployment/guidelines/`** (delivery & infrastructure — owned by `deployer`)
@@ -123,7 +123,6 @@ Agent definitions live in `.claude/agents/`. Each agent file describes its speci
 | Planning, task breakdown, architectural decisions | `planner` |
 | Application source code — new functionality and changes | `coder` |
 | Application source code — defect fixes | `bugfixer` |
-| All test code and test infrastructure (unit / integration / E2E, fixtures, mocks, test config) | `tester` |
 | Code review and compliance findings (read-only) | `reviewer` |
 | CI/CD pipelines, Dockerfiles, docker-compose, environments, secret/env management | `deployer` |
 | Bruno API test collection (`.bru` requests, collection/OAuth config, environments) | `bruno` |
@@ -138,7 +137,7 @@ Domains are **exclusive** — no agent ever works in another agent's domain. A t
 2. Match the STEP 0 analysis against the ownership table and descriptions. Choose the **minimum set** of agents whose domains fully cover the task.
 3. **Single match** → delegate the task to that agent.
 4. **Multiple agents needed** → define the orchestration plan before starting:
-   - **Sequential** when outputs feed each other (e.g., plan → implement → test → review → deploy).
+   - **Sequential** when outputs feed each other (e.g., plan → implement → review → deploy).
    - **Parallel** only when the workstreams are truly independent.
 5. **No suitable agent** → tell the user explicitly that no agent matches, then either handle it in the main context (if permitted) or ask whether a new agent should be created. **Never force-fit a task onto the wrong agent.**
 
@@ -176,7 +175,7 @@ The overall task is complete only when **every work item from every Impact Repor
 
 ### Worked example
 
-User reports a bug → `bugfixer` diagnoses a root cause whose complete fix is a domain-model change (its own work) that invalidates domain unit tests (`tester`) and needs a pipeline change (`deployer`). Bugfixer **changes nothing** and returns an Impact Report: own planned fix + Delegation Request → `tester` (update the invalidated tests, add a regression test, with reproduction details) + Delegation Request → `deployer` (the pipeline change) + suggested ordering. You decide the actual sequence, dispatch each agent in order with a complete brief, and the task is done only when all three complete.
+User reports a bug → `bugfixer` diagnoses a root cause whose complete fix is a change to an endpoint's response contract (its own work) that also needs a pipeline change (`deployer`) and an updated Bruno request (`bruno`). Bugfixer **changes nothing** and returns an Impact Report: own planned fix + Delegation Request → `deployer` (the pipeline change) + Delegation Request → `bruno` (update the request and its assertions) + suggested ordering. You decide the actual sequence, dispatch each agent in order with a complete brief, and the task is done only when all three complete.
 
 ---
 

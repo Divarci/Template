@@ -12,7 +12,7 @@ Approved tooling for the **Bruno collection**. This document is the source of tr
 |---|---|---|
 | **Bruno** (open-source API client) | Author and run the collection from the desktop app | ✓ |
 | **Bru** language (`.bru` files) | Git-native, plain-text request/collection format — one request per file | ✓ |
-| **Bruno CLI** (`bru run`) | Run the collection headless (local, and optionally in CI) | ○ |
+| **Bruno CLI** (`bru run`) | Run the collection from the command line (a fully unattended CI run first needs a non-interactive grant) | ○ |
 
 > Bruno is chosen because the collection is **plain-text and git-native**: `.bru` files diff and review like source, unlike an opaque exported JSON blob. No account, cloud sync, or proprietary format is used.
 
@@ -20,7 +20,7 @@ Approved tooling for the **Bruno collection**. This document is the source of tr
 
 | Technology | Purpose | Status |
 |---|---|---|
-| **OAuth 2.0 — Authorization Code + PKCE** (Bruno built-in auth, collection scope) | Obtain a bearer token (one-time browser login) and attach it to every request; Password grant is the headless alternative | ✓ |
+| **OAuth 2.0 — Authorization Code + PKCE** (Bruno built-in auth, collection scope) | Obtain a bearer token (one-time browser login) and attach it to every request | ✓ |
 | **Keycloak** (dev realm `template`, public client `template-public`) | The identity provider the OAuth flow targets | ✓ |
 
 > Auth is configured once at the collection level and inherited by every request (`hard-rules.md` §3). The concrete OAuth parameters and how secrets are handled are defined in `architecture.md` and `security.md`; the working dev values live in the `local` environment.
@@ -37,5 +37,5 @@ Approved tooling for the **Bruno collection**. This document is the source of tr
 ## Out of scope
 
 - No external test runner, no data-driven fuzzing, no negative-case matrices (happy path only — `hard-rules.md` §5).
-- No secret manager beyond Bruno secret vars / `.env` (`security.md`).
+- No secret manager beyond the git-ignored `bruno/.env` (`security.md`).
 - No proprietary Postman/Insomnia formats; the collection is Bruno `.bru` only.

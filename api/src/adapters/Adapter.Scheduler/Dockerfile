@@ -14,6 +14,7 @@ COPY ["api/src/core/Core.Library/Core.Library.csproj", "api/src/core/Core.Librar
 COPY ["api/src/core/Core.Domain/Core.Domain.csproj", "api/src/core/Core.Domain/"]
 COPY ["api/src/core/Core.Services/Core.Services.csproj", "api/src/core/Core.Services/"]
 COPY ["api/src/infrastructures/Infra.Persistence/Infra.Persistence.csproj", "api/src/infrastructures/Infra.Persistence/"]
+COPY ["api/src/infrastructures/Infra.Caching/Infra.Caching.csproj", "api/src/infrastructures/Infra.Caching/"]
 COPY ["api/src/applications/App.Processor/App.Processor.csproj", "api/src/applications/App.Processor/"]
 COPY ["api/src/adapters/Adapter.Scheduler/Adapter.Scheduler.csproj", "api/src/adapters/Adapter.Scheduler/"]
 RUN dotnet restore "./api/src/adapters/Adapter.Scheduler/Adapter.Scheduler.csproj"

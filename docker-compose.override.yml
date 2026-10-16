@@ -1,29 +1,27 @@
 # Development overrides — auto-merged on top of docker-compose.yml by a bare `docker compose` run.
 # Throwaway dev values only; nothing here reaches production (production uses the base file only).
 # Development is HTTP-only: the container binds HTTP on 8080 with no HTTPS endpoint, so it needs no
-# developer certificate. HTTPS is production-only and is handled in the base docker-compose.yml.
+# developer certificate. The app never terminates TLS in any environment: the base also binds plain
+# HTTP, and production TLS is provided by an ingress in front of it (not chosen yet; hard-rules §10).
 # The backing services below (postgres, redis, seq) are DEV-ONLY: production reaches managed/external
-# instances via ${VAR} secrets in the base file, so these containers are defined only here.
+# instances via .env secrets (connection strings/credentials) and non-secret base literals (endpoint
+# URLs) in the base file, so these containers are defined only here.
 services:
   adapter.restful:
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
-      - CONNECTIONSTRINGS__POSTGRES=Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
-      - CONNECTIONSTRINGS__REDIS=redis:6379
-      - SERILOG__WRITETO__1__ARGS__SERVERURL=http://seq:5341
+      ASPNETCORE_ENVIRONMENT: Development
+      CONNECTIONSTRINGS__POSTGRES: Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
+      CONNECTIONSTRINGS__REDIS: redis:6379
+      SERILOG__WRITETO__1__ARGS__SERVERURL: http://seq:5341
       # Authentication against the dev Keycloak container. AUTHORITY is the INTERNAL URL the API
       # uses for OIDC metadata/JWKS discovery (reachable on the compose network). VALIDISSUER is the
       # EXTERNAL frontend URL that clients use and that Keycloak stamps into every token's `iss`
       # claim (KC_HOSTNAME below). They differ on purpose — see the keycloak service comment.
-      - AUTHENTICATION__AUTHORITY=http://keycloak:8080/realms/template
-      - AUTHENTICATION__AUDIENCE=template-api
-      - AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDISSUER=http://localhost:8180/realms/template
-      - AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE=template-api
-      - AUTHENTICATION__REQUIREHTTPSMETADATA=false
+      AUTHENTICATION__AUTHORITY: http://keycloak:8080/realms/template
+      AUTHENTICATION__TOKENVALIDATIONPARAMETERS__VALIDISSUER: http://localhost:8180/realms/template
+      AUTHENTICATION__REQUIREHTTPSMETADATA: "false"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,9 +37,9 @@ services:
 
   adapter.scheduler:
     environment:
-      - DOTNET_ENVIRONMENT=Development
-      - CONNECTIONSTRINGS__POSTGRES=Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
-      - CONNECTIONSTRINGS__REDIS=redis:6379
+      DOTNET_ENVIRONMENT: Development
+      CONNECTIONSTRINGS__POSTGRES: Host=postgres;Port=5432;Database=template;Username=postgres;Password=postgres
+      CONNECTIONSTRINGS__REDIS: redis:6379
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,9 +92,9 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=template
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template
     ports:
       - "5432:5432"
     volumes:

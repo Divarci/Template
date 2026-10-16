@@ -19,7 +19,7 @@ The approved delivery and infrastructure tooling for the project. Only the techn
 | Agent | Pool / image | Used by |
 |---|---|---|
 | **Self-hosted** | Pool from `AGENT_POOL` (default `Default`) | CD pipeline (`pipelines/azure-pipelines-ci-cd.yml`) — runs on the self-hosted production machine (home server / on-prem PC) and its Docker daemon. |
-| **Microsoft-hosted** | `ubuntu-latest` | CI pipelines (build + test) — ephemeral cloud agents, no access to the deploy machine. |
+| **Microsoft-hosted** | `ubuntu-latest` | CI pipelines (build) — ephemeral cloud agents, no access to the deploy machine. |
 
 The pool name is set once in the CD pipeline's `AGENT_POOL` variable (default `Default`, the pool Azure DevOps creates in every organisation) and must match the pool the self-hosted agent is registered in (Azure DevOps → Agent Pools). CD requires the self-hosted agent because it operates directly on the self-hosted machine's Git checkout and Docker daemon (no registry). Azure DevOps is only the CI/CD *service*; the deploy target is the self-hosted machine, not a cloud VM.
 
@@ -45,7 +45,7 @@ There is **no container registry**. Images are built on the self-hosted machine 
 | `mcr.microsoft.com/dotnet/runtime` | `10.0` | Runtime stage of worker hosts (e.g. `Adapter.Scheduler`) — no web server. |
 | `mcr.microsoft.com/dotnet/sdk` | `10.0` | Build/publish stages for all .NET services. |
 
-Base images are pinned to a major version and pulled from the official Microsoft Container Registry / Docker Hub official images. Do not substitute unofficial or `latest`-floating base images for application services. Stock supporting services (a cache, a log sink, a dev database) use their official images, pinned to a specific tag when added rather than left on `latest`.
+Base images are pinned to a major version and pulled from their publisher's official registry — Microsoft Container Registry for .NET, Docker Hub official images, or the vendor's own registry where that is the official source (e.g. `quay.io/keycloak/keycloak`). Do not substitute unofficial or `latest`-floating base images for application services. Stock supporting services (a cache, a log sink, a dev database) use their official images, pinned to a specific tag when added rather than left on `latest`.
 
 ---
 
@@ -55,7 +55,7 @@ These are owned by the `api` platform, but the deployment pipelines must invoke 
 
 | Technology | Version | Invoked by |
 |---|---|---|
-| **.NET SDK** | `10.0.x` (preview versions enabled) | CI build/test steps (`UseDotNet@2`, `DotNetCoreCLI@2`) against `Template.slnx`. |
+| **.NET SDK** | `10.0.x` (preview versions enabled) | CI build steps (`UseDotNet@2`, `DotNetCoreCLI@2`) against `Template.slnx`. |
 
 ---
 

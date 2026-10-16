@@ -12,7 +12,7 @@ The remaining Bruno guidelines (`philosophy`, `architecture`, `tech-stack`, `str
 >
 > In scope — the **only** files these guidelines cover and the `bruno` agent may write: `bruno/bruno.json`, `bruno/collection.bru`, `bruno/environments/*.bru`, folder metadata (`folder.bru`), and request files (`*.bru`).
 >
-> Out of scope — never touched under a Bruno task: application source (`api/src/**`), tests (`api/test/**`), delivery/infrastructure assets (Dockerfiles, compose, pipelines), and the guideline docs. A need there is another agent's work — return a Delegation Request; never edit it yourself.
+> Out of scope — never touched under a Bruno task: application source (`api/src/**`), delivery/infrastructure assets (Dockerfiles, compose, pipelines), and the guideline docs. A need there is another agent's work — return a Delegation Request; never edit it yourself.
 
 ---
 
@@ -40,8 +40,8 @@ The remaining Bruno guidelines (`philosophy`, `architecture`, `tech-stack`, `str
 
 > **No secret value — password, token, client secret, or credential — appears in any committed Bruno file.**
 >
-> - Secret variables (e.g. the account password) are declared as Bruno **secret vars** / supplied via `.env`; they carry **no value** in committed files.
-> - Only **non-secret identifiers** may be literals in a committed environment file: base URL, token endpoint URL, realm, and the public `clientId` (a public client with no secret grants no access on its own).
+> - A secret value, if one is ever needed, lives only in the git-ignored `.env` at the collection root (`bruno/.env`) and is referenced as `{{process.env.<NAME>}}`; committed files carry the **name only**, never the value.
+> - Only **non-secret identifiers** may be literals in a committed environment file: the base URL, the authorization and token endpoint URLs, the OAuth callback URL, and the public `clientId` (a public client with no secret grants no access on its own).
 > - Never print, echo, or log a token or secret — not in a script, not in a report. `.env` and any secret store are git-ignored.
 
 ---
@@ -73,4 +73,4 @@ The remaining Bruno guidelines (`philosophy`, `architecture`, `tech-stack`, `str
 
 > **The full collection (or an aggregate's folder) can be executed in sequence — via the Bruno app runner — and pass, using only inherited auth and captured variables.** Request ordering (`seq`) reflects the dependency chain (create before read/update/delete); no step requires a human to paste a value from one response into another.
 >
-> Obtaining the initial token may require a **one-time interactive login** — the Authorization-Code + PKCE flow opens a browser once, then Bruno caches the token for the run. A fully headless run (Bruno CLI) uses the Password-grant alternative (`architecture.md`). Either way, once the token exists the request chain runs unattended on inherited auth and captured variables.
+> Obtaining the initial token may require a **one-time interactive login** — the Authorization-Code + PKCE flow opens a browser once, then Bruno caches the token for the run. Once the token exists the request chain runs unattended on inherited auth and captured variables. A fully headless run with no browser at all (e.g. Bruno CLI in CI) is not set up; it would need a non-interactive grant, introduced as a deliberate decision.

@@ -2,6 +2,7 @@ using Core.Domain.Entities.System.OutboxMessages;
 using Core.Library.Abstractions;
 using Core.Library.Contracts.DomainEvents.Process;
 using Core.Library.Contracts.UnitOfWorks;
+using Core.Library.Helpers;
 using Core.Library.ResultPattern;
 using Infra.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -16,18 +17,21 @@ internal sealed class UnitOfWork(
     AppDbContext context,
     ILogger<UnitOfWork> logger) : ITransactionalUnitOfWork
 {
+    private readonly AppDbContext _context = context;
+    private readonly ILogger<UnitOfWork> _logger = logger;
+
     public async Task<Result> ExecuteTransactionAsync(
         Func<Task<Result>> operation,
         CancellationToken cancellationToken = default)
     {
-        await using IDbContextTransaction transaction = await context.Database
+        await using IDbContextTransaction transaction = await _context.Database
             .BeginTransactionAsync(cancellationToken);
 
         string traceId = Guid.NewGuid().ToString();
 
         try
         {
-            logger.LogDebug("Transaction started.");
+            _logger.LogDebug("Transaction started.");
 
             Result result = await operation();
 
@@ -35,7 +39,7 @@ internal sealed class UnitOfWork(
             {
                 await transaction.RollbackAsync(cancellationToken);
 
-                logger.LogWarning(
+                _logger.LogWarning(
                     "Transaction rolled back. Operation returned a failure result. {Message} | TraceId: {TraceId}",
                     result.Message,
                     traceId);
@@ -54,10 +58,10 @@ internal sealed class UnitOfWork(
         {
             await transaction.RollbackAsync(cancellationToken);
 
-            logger.LogError(ex, "Transaction rolled back due to an unhandled exception. TraceId: {TraceId}.", traceId);
+            _logger.LogError(ex, "Transaction rolled back due to an unhandled exception. TraceId: {TraceId}.", traceId);
 
             return Result.Failure(
-                message: ex.Message,
+                message: $"An unexpected error occurred while processing the request. TraceId: {traceId}",
                 statusCode: HttpStatusCode.InternalServerError);
         }
     }
@@ -66,14 +70,14 @@ internal sealed class UnitOfWork(
         Func<Task<Result<T>>> operation,
         CancellationToken cancellationToken = default)
     {
-        await using IDbContextTransaction transaction = await context.Database
+        await using IDbContextTransaction transaction = await _context.Database
             .BeginTransactionAsync(cancellationToken);
 
         string traceId = Guid.NewGuid().ToString();
 
         try
         {
-            logger.LogDebug("Transaction started.");
+            _logger.LogDebug("Transaction started.");
 
             Result<T> result = await operation();
 
@@ -81,7 +85,7 @@ internal sealed class UnitOfWork(
             {
                 await transaction.RollbackAsync(cancellationToken);
 
-                logger.LogWarning(
+                _logger.LogWarning(
                     "Transaction rolled back. Operation returned a failure result. {Message} | TraceId: {TraceId}",
                     result.Message,
                     traceId);
@@ -102,10 +106,10 @@ internal sealed class UnitOfWork(
         {
             await transaction.RollbackAsync(cancellationToken);
 
-            logger.LogError(ex, "Transaction rolled back due to an unhandled exception. TraceId: {TraceId}.", traceId);
+            _logger.LogError(ex, "Transaction rolled back due to an unhandled exception. TraceId: {TraceId}.", traceId);
 
             return Result<T>.Failure(
-                message: ex.Message,
+                message: $"An unexpected error occurred while processing the request. TraceId: {traceId}",
                 statusCode: HttpStatusCode.InternalServerError);
         }
     }
@@ -116,13 +120,13 @@ internal sealed class UnitOfWork(
     {
         string traceId = Guid.NewGuid().ToString();
 
-        Result domainEventsRegisterResult = await AddDomainEventsAsOutboxMessagesAsync(context);
+        Result domainEventsRegisterResult = await AddDomainEventsAsOutboxMessagesAsync(_context);
 
         if (domainEventsRegisterResult.IsFailure)
         {
             await transaction.RollbackAsync(cancellationToken);
 
-            logger.LogError(
+            _logger.LogError(
                 "Transaction rolled back. Failed to register domain events. {Message} | TraceId: {TraceId}",
                 domainEventsRegisterResult.Message,
                 traceId);
@@ -130,11 +134,11 @@ internal sealed class UnitOfWork(
             return domainEventsRegisterResult;
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 
-        logger.LogDebug("Transaction committed successfully.");
+        _logger.LogDebug("Transaction committed successfully.");
 
         return Result.Success(
             message: "Transaction committed.",
@@ -157,15 +161,17 @@ internal sealed class UnitOfWork(
             .Select(domainEvent => OutboxMessage.Create(
                 Guid.NewGuid(),
                 domainEvent.GetType().AssemblyQualifiedName!,
-                JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions.Instance),
-                DateTime.UtcNow))];
+                JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), DomainEventSerializerOptions.Instance),
+                domainEvent.OccurredOnUtc))];
 
-        if (outboxMessageResults.Any(x => x.IsFailure))
+        if (outboxMessageResults.Any(x => x.IsFailureAndNoData))
             return Result.Failure(
                 message: "Failed to create outbox messages from domain events.",
                 statusCode: HttpStatusCode.InternalServerError);
 
-        await dbContext.AddRangeAsync(outboxMessageResults.Select(x => x.Data)!);
+        await dbContext.AddRangeAsync(outboxMessageResults
+            .Select(x => x.Data)
+            .OfType<OutboxMessage>());
 
         return Result.Success(
             message: "Outbox messages created successfully",

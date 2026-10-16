@@ -16,14 +16,14 @@ public interface IAuditLogService
     /// <param name="entityId">Optional entity ID. When provided, only logs for that entity are returned; when null, all logs are returned.</param>
     /// <param name="page">The page number (1-based), already normalised.</param>
     /// <param name="pageSize">The number of items per page, already normalised.</param>
-    /// <param name="sortBy">The field to sort by. Accepted values: <c>createdDate</c>, <c>description</c>.</param>
+    /// <param name="sortBy">The field to sort by, already normalised. Accepted values: <c>createdOnUtc</c> (default), <c>entityId</c>; any other value sorts by <c>createdOnUtc</c>.</param>
     /// <param name="isAscending">Sort direction: true for ascending, false for descending.</param>
     /// <param name="keyword">Optional keyword for partial match on the Description field.</param>
     /// <param name="fromDate">Optional lower bound on the Created timestamp (UTC).</param>
     /// <param name="toDate">Optional upper bound on the Created timestamp (UTC).</param>
     /// <param name="mapper">A delegate that maps an array of <see cref="AuditLog"/> entities to an array of DTOs.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A paginated result containing the audit log DTOs for the entity.</returns>
+    /// <returns>A paginated result containing the audit log DTOs, scoped to <paramref name="entityId"/> when supplied (all logs otherwise).</returns>
     Task<PaginatedResult<TDto[]>> GetPaginatedAsync<TDto>(
         Guid? entityId,
         int page,

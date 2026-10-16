@@ -50,7 +50,7 @@ Whether a state change emits a domain event is decided from the feature request 
 
 ## Persistence — Transactional Outbox
 
-When `UnitOfWork.CommitAsync()` is called at the end of a use case, it performs the following inside the active database transaction:
+When the operation a use case passes to `ITransactionalUnitOfWork.ExecuteTransactionAsync` succeeds, the unit of work commits, performing the following inside the active database transaction:
 
 1. Iterates all tracked `BaseEntity` instances via the EF Core `ChangeTracker`.
 2. For each entity, reads its `DomainEvents` collection and calls `ClearDomainEvents()` to prevent re-processing.
@@ -85,13 +85,13 @@ The `Adapter.Scheduler` project runs a Quartz.NET job (`ProcessOutboxJob`) on a 
    - Deserialise `OutboxMessage.Content` into the concrete domain event.
    - Find all registered `IDomainEventHandler<T>` for that event type.
    - Call each handler's `HandleAsync()` method.
-   - Mark the message processed (`ProcessedOnUtc = now`).
+   - Mark the message processed through `IOutboxMessageService.MarkProcessed(message, error)` (`ProcessedOnUtc = now`; the service calls the domain method and stages the entity — the processor never mutates the entity itself).
    - If a handler throws, log the error and store it in `OutboxMessage.Error`.
 3. `SaveChanges` + `Commit` — processing is also wrapped in a transaction.
 
 ### Handler discovery
 
-Handlers are discovered via reflection at startup from the `App.Processor` assembly and registered as `Scoped` by `App.Processor.ServiceRegistrar`. At runtime each handler is resolved from a fresh `IServiceScope` for correct DI lifetime management.
+Handlers are discovered via reflection at startup from the `App.Processor` assembly and registered as `Scoped` by `App.Processor.ServiceRegistrar`. At runtime the processor creates one fresh `IServiceScope` per outbox message, and every handler for that message is resolved from it, for correct DI lifetime management.
 
 ### Concurrency safety
 
@@ -108,6 +108,7 @@ Handlers live in `App.Processor/DomainEvents/<Context>/<Aggregate>/` and follow 
 **Handlers are async use cases.** They follow the same transactional pattern as HTTP use cases:
 - Inject `ITransactionalUnitOfWork`, the relevant entity services, and `ILogger<T>`.
 - Wrap the entire body in `_unitOfWork.ExecuteTransactionAsync`.
+- Check the `Result` it returns: when it is a failure, throw a `TemplateException` carrying that result's message. `HandleAsync` returns a plain `Task`, so throwing is the only way a failure reaches the processor, which records it in `OutboxMessage.Error`; a discarded failure would mark the message as processed without error.
 - Call services, never repositories directly.
 - Audit-log entries are written inside the entity services the handler calls (via the audit-log repository — hard rule 4), not by the handler. A service's audit-log write is non-fatal — it logs a warning with a trace id and returns the service result.
 
@@ -118,7 +119,9 @@ Handlers live in `App.Processor/DomainEvents/<Context>/<Aggregate>/` and follow 
 ## Error Handling
 
 - If a handler throws, the error is stored in `OutboxMessage.Error` and the message is marked processed — preventing infinite retry loops.
-- If the batch fetch itself fails, the transaction rolls back and the job logs the failure via the `Core.Library` domain exception.
+- If marking a message processed fails, the processor logs a warning with the message id and a trace id and returns the failure. The batch transaction rolls back — no message in the batch is marked — and the whole batch is retried on the next tick. Rolling back is deliberate: `MarkProcessed` mutates before it validates, so continuing would persist a failed mark as "processed".
+- **Known limitation — poison messages.** A failure that repeats on every attempt (e.g. a row whose data the entity validator rejects) blocks the outbox at that message, and the handlers of the messages before it in the batch re-run on every tick. No event is lost; processing resumes once the row is corrected. Delivery is therefore at-least-once, and handlers must be idempotent. Per-message isolation, a retry counter, and a dead-letter state are planned but not yet implemented.
+- If the batch fetch itself fails, the transaction rolls back and the job reports the failure by throwing a `TemplateException` carrying the failure message.
 - If event serialisation fails during the UoW commit, the entire transaction (business data + outbox) rolls back.
 
 ---

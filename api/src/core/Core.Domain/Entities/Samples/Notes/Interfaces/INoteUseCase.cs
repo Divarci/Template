@@ -21,7 +21,9 @@ public interface INoteUseCase
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Applies a partial update to an existing note within a transaction and records an audit-log entry.
+    /// Applies a partial update to an existing note within a transaction and records one audit-log entry per changed field.
+    /// Only the non-null fields of <paramref name="updateModel"/> are changed; when every field is null,
+    /// nothing is staged, audited, or invalidated.
     /// </summary>
     /// <param name="id">The identifier of the note to update.</param>
     /// <param name="updateModel">The partial-update data; null fields are left unchanged.</param>
@@ -61,8 +63,8 @@ public interface INoteUseCase
     /// <typeparam name="TDto">The DTO type produced by the mapper delegate.</typeparam>
     /// <param name="pageQuery">The raw page number from the query string (null defaults to 1).</param>
     /// <param name="pageSizeQuery">The raw page size from the query string (null defaults to 20).</param>
-    /// <param name="sortByQuery">The raw sort field from the query string (null defaults to <c>title</c>).</param>
-    /// <param name="isAscendingQuery">The raw sort direction from the query string (null defaults to false — most recent first).</param>
+    /// <param name="sortByQuery">The raw sort field from the query string (null or blank defaults to <c>title</c>).</param>
+    /// <param name="isAscendingQuery">The raw sort direction from the query string (null defaults to false — descending).</param>
     /// <param name="keyword">Optional keyword for partial match on the Title field.</param>
     /// <param name="isPinned">Optional pin-state filter. When provided, only notes with the matching pin state are returned.</param>
     /// <param name="mapper">A delegate that maps an array of <see cref="Note"/> entities to an array of DTOs.</param>

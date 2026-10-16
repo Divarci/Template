@@ -5,7 +5,6 @@ using Core.Library.ResultPattern;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Net;
-using System.Text.Json;
 
 namespace App.Processor.DomainEvents;
 
@@ -22,7 +21,6 @@ internal sealed partial class OutboxProcessor(
 
     public async Task<Result> ProcessOutboxMessagesAsync(
         int batchSize,
-        JsonSerializerOptions jsonSerializerOptions,
         CancellationToken cancellationToken = default)
     {
         return await _unitOfWork.ExecuteTransactionAsync(async () =>
@@ -56,7 +54,6 @@ internal sealed partial class OutboxProcessor(
                 {
                     await InitialiseHandlersAsync(
                         outboxMessage,
-                        jsonSerializerOptions,
                         _serviceScopeFactory,
                         cancellationToken);
                 }
@@ -71,7 +68,20 @@ internal sealed partial class OutboxProcessor(
                     exception = caughtException;
                 }
 
-                await UpdateAsync(_outboxMessageService, outboxMessage, exception);
+                Result markProcessedResult = _outboxMessageService.MarkProcessed(
+                    outboxMessage,
+                    exception?.ToString());
+
+                if (markProcessedResult.IsFailure)
+                {
+                    _logger.LogWarning(
+                        "Failed to mark outbox message {MessageId} as processed. {Message} | TraceId: {TraceId}",
+                        outboxMessage.Id,
+                        markProcessedResult.Message,
+                        traceId);
+
+                    return markProcessedResult;
+                }
             }
 
             return Result.Success(
