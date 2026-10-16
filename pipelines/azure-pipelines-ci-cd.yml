@@ -7,14 +7,16 @@ trigger:
       - master
 
 variables:
-  # Self-hosted agent pool — must match the pool name in ADO > Agent Pools.
-  AGENT_POOL: 'Default'
+  # Self-hosted agent pool — HomerServer is the pool every project's agent is registered in;
+  # must match the pool name in ADO > Agent Pools.
+  AGENT_POOL: 'HomerServer'
   # Deploy branch — used by the git reset step. Must equal the trigger branch above.
   DEPLOY_BRANCH: 'master'
   COMPOSE_FILE: 'docker-compose.yml'
   # PROJECT_DIR is the repo checkout on the self-hosted machine (the agent's working copy that is
-  # git reset to origin/$(DEPLOY_BRANCH)). If the checkout lives elsewhere, change this value here.
-  PROJECT_DIR: '/path/to/Template'
+  # git reset to origin/$(DEPLOY_BRANCH)). Every project's checkout lives at /srv/<slug>; this
+  # value changes with the project's slug (the template's slug is "template").
+  PROJECT_DIR: '/srv/template'
 
 pool:
   # Template expression (compile time) — macro syntax $(...) is not expanded in pool.

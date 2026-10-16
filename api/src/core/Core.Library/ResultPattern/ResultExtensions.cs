@@ -6,7 +6,7 @@ public static class ResultExtensions
 {
     public static Result<TModel> MapTo<TEntity, TModel>(this Result<TEntity> result, Func<TEntity, TModel> mapper)
     {
-        if (result.IsFailureAndNoData)
+        if (result.IsFailure || result.IsFailureAndNoData)
             throw new TemplateException(
                 assemblyName: "Core.Library",
                 className: nameof(ResultExtensions),
@@ -21,7 +21,7 @@ public static class ResultExtensions
 
     public static PaginatedResult<TModel> MapTo<TEntity, TModel>(this PaginatedResult<TEntity> result, Func<TEntity, TModel> mapper)
     {
-        if (result.IsFailureAndNoData)
+        if (result.IsFailure || result.IsFailureAndNoData)
             throw new TemplateException(
                 assemblyName: "Core.Library",
                 className: nameof(ResultExtensions),

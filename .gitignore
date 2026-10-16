@@ -362,6 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Local environment / secrets — never commit real values (see docs/deployment/guidelines/security.md)
+# Local environment / secrets — never commit real values (see docs/deployment/security.md)
 .env
 .env.local

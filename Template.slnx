@@ -18,6 +18,11 @@
     <Project Path="api/src/infrastructures/Infra.Caching/Infra.Caching.csproj" />
     <Project Path="api/src/infrastructures/Infra.Persistence/Infra.Persistence.csproj" />
   </Folder>
+  <Folder Name="/api/test/">
+    <Project Path="api/test/Core.Domain.Tests/Core.Domain.Tests.csproj" />
+    <Project Path="api/test/Core.Library.Tests/Core.Library.Tests.csproj" />
+    <Project Path="api/test/Core.Services.Tests/Core.Services.Tests.csproj" />
+  </Folder>
   <Folder Name="/bruno/">
     <File Path="bruno/bruno.json" />
     <File Path="bruno/collection.bru" />
@@ -44,48 +49,74 @@
     <File Path=".claude/agents/deployer.md" />
     <File Path=".claude/agents/planner.md" />
     <File Path=".claude/agents/reviewer.md" />
+    <File Path=".claude/agents/tester.md" />
   </Folder>
   <Folder Name="/claude/skills/" />
   <Folder Name="/claude/skills/project-start/">
     <File Path=".claude/skills/project-start/SKILL.md" />
+    <File Path=".claude/skills/project-start/checklist.md" />
   </Folder>
   <Folder Name="/docs/">
     <File Path="docs/version-control.md" />
   </Folder>
-  <Folder Name="/docs/api/" />
-  <Folder Name="/docs/api/guidelines/">
-    <File Path="docs/api/guidelines/architecture.md" />
-    <File Path="docs/api/guidelines/coding-standards.md" />
-    <File Path="docs/api/guidelines/domain-driven-design.md" />
-    <File Path="docs/api/guidelines/event-driven-design.md" />
-    <File Path="docs/api/guidelines/hard-rules.md" />
-    <File Path="docs/api/guidelines/philosophy.md" />
-    <File Path="docs/api/guidelines/security.md" />
-    <File Path="docs/api/guidelines/structure.md" />
-    <File Path="docs/api/guidelines/tech-stack.md" />
+  <Folder Name="/docs/api/">
+    <File Path="docs/api/architecture.md" />
+    <File Path="docs/api/coding-standards.md" />
+    <File Path="docs/api/domain-driven-design.md" />
+    <File Path="docs/api/event-driven-design.md" />
+    <File Path="docs/api/hard-rules.md" />
+    <File Path="docs/api/philosophy.md" />
+    <File Path="docs/api/security.md" />
+    <File Path="docs/api/structure.md" />
+    <File Path="docs/api/tech-stack.md" />
   </Folder>
   <Folder Name="/docs/api/requirements/" />
   <Folder Name="/docs/api/requirements/business-requirements/" />
   <Folder Name="/docs/api/requirements/technical-requirements/" />
-  <Folder Name="/docs/bruno/" />
-  <Folder Name="/docs/bruno/guidelines/">
-    <File Path="docs/bruno/guidelines/architecture.md" />
-    <File Path="docs/bruno/guidelines/coding-standards.md" />
-    <File Path="docs/bruno/guidelines/hard-rules.md" />
-    <File Path="docs/bruno/guidelines/philosophy.md" />
-    <File Path="docs/bruno/guidelines/security.md" />
-    <File Path="docs/bruno/guidelines/structure.md" />
-    <File Path="docs/bruno/guidelines/tech-stack.md" />
+  <Folder Name="/docs/bruno/">
+    <File Path="docs/bruno/architecture.md" />
+    <File Path="docs/bruno/coding-standards.md" />
+    <File Path="docs/bruno/hard-rules.md" />
+    <File Path="docs/bruno/philosophy.md" />
+    <File Path="docs/bruno/security.md" />
+    <File Path="docs/bruno/structure.md" />
+    <File Path="docs/bruno/tech-stack.md" />
   </Folder>
-  <Folder Name="/docs/deployment/" />
-  <Folder Name="/docs/deployment/guidelines/">
-    <File Path="docs/deployment/guidelines/architecture.md" />
-    <File Path="docs/deployment/guidelines/coding-standards.md" />
-    <File Path="docs/deployment/guidelines/hard-rules.md" />
-    <File Path="docs/deployment/guidelines/philosophy.md" />
-    <File Path="docs/deployment/guidelines/security.md" />
-    <File Path="docs/deployment/guidelines/structure.md" />
-    <File Path="docs/deployment/guidelines/tech-stack.md" />
+  <Folder Name="/docs/deployment/">
+    <File Path="docs/deployment/architecture.md" />
+    <File Path="docs/deployment/coding-standards.md" />
+    <File Path="docs/deployment/hard-rules.md" />
+    <File Path="docs/deployment/philosophy.md" />
+    <File Path="docs/deployment/security.md" />
+    <File Path="docs/deployment/structure.md" />
+    <File Path="docs/deployment/tech-stack.md" />
+  </Folder>
+  <Folder Name="/docs/tests/" />
+  <Folder Name="/docs/tests/domain-tests/">
+    <File Path="docs/tests/domain-tests/testing-critical-rules.md" />
+    <File Path="docs/tests/domain-tests/testing-index.md" />
+    <File Path="docs/tests/domain-tests/testing-naming-conventions.md" />
+    <File Path="docs/tests/domain-tests/testing-patterns-entity.md" />
+    <File Path="docs/tests/domain-tests/testing-patterns-validation.md" />
+    <File Path="docs/tests/domain-tests/testing-patterns-value-object.md" />
+    <File Path="docs/tests/domain-tests/testing-philosophy.md" />
+    <File Path="docs/tests/domain-tests/testing-structure.md" />
+    <File Path="docs/tests/domain-tests/testing-tech-stack.md" />
+  </Folder>
+  <Folder Name="/docs/tests/service-tests/">
+    <File Path="docs/tests/service-tests/testing-critical-rules.md" />
+    <File Path="docs/tests/service-tests/testing-index.md" />
+    <File Path="docs/tests/service-tests/testing-moq-patterns.md" />
+    <File Path="docs/tests/service-tests/testing-naming-conventions.md" />
+    <File Path="docs/tests/service-tests/testing-patterns-collection.md" />
+    <File Path="docs/tests/service-tests/testing-patterns-create.md" />
+    <File Path="docs/tests/service-tests/testing-patterns-delete.md" />
+    <File Path="docs/tests/service-tests/testing-patterns-single.md" />
+    <File Path="docs/tests/service-tests/testing-patterns-update.md" />
+    <File Path="docs/tests/service-tests/testing-philosophy.md" />
+    <File Path="docs/tests/service-tests/testing-setup.md" />
+    <File Path="docs/tests/service-tests/testing-structure.md" />
+    <File Path="docs/tests/service-tests/testing-tech-stack.md" />
   </Folder>
   <Folder Name="/items/">
     <File Path=".gitattributes" />

@@ -1,0 +1,181 @@
+using AwesomeAssertions;
+using Core.Library.ResultPattern;
+using Core.Library.Validators;
+using System.Net;
+using Xunit;
+
+namespace Core.Library.Tests.Validators.IntegerValidator;
+
+public sealed partial class IntegerValidatorTests
+{
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_WhenFieldNameIsEmpty_ReturnsInternalServerError(string? fieldName)
+    {
+        // Arrange
+        int value = MinValue;
+
+        // Act
+        Result result = value.Validate(fieldName!);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.InternalServerError);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_WhenNullableValueAndFieldNameIsEmpty_ReturnsInternalServerError(string? fieldName)
+    {
+        // Arrange
+        int? value = MinValue;
+
+        // Act
+        Result result = value.Validate(fieldName!);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public void Validate_WhenMinValueIsGreaterThanMaxValue_ReturnsBadRequest()
+    {
+        // Arrange
+        int value = MinValue;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MaxValue, maxValue: MinValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public void Validate_WhenNullableValueAndMinValueIsGreaterThanMaxValue_ReturnsBadRequest()
+    {
+        // Arrange
+        int? value = MinValue;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MaxValue, maxValue: MinValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public void Validate_WhenNegativeAndNegativeIsNotAllowed_ReturnsValidationError()
+    {
+        // Arrange
+        int value = -1;
+
+        // Act
+        Result result = value.Validate(FieldName, canBeNegative: false);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+        result.ErrorDetails!.Errors.Should().ContainSingle()
+            .Which.Should().Be("Quantity cannot be negative");
+    }
+
+    [Fact]
+    public void Validate_WhenNullableValueIsNegativeAndNegativeIsNotAllowed_ReturnsValidationError()
+    {
+        // Arrange
+        int? value = -1;
+
+        // Act
+        Result result = value.Validate(FieldName, canBeNegative: false);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public void Validate_WhenBelowMinValue_ReturnsValidationError()
+    {
+        // Arrange
+        int value = MinValue - 1;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MinValue, maxValue: MaxValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+        result.ErrorDetails!.Errors.Should().ContainSingle()
+            .Which.Should().Be("Quantity cannot be less than 10");
+    }
+
+    [Fact]
+    public void Validate_WhenNullableValueIsBelowMinValue_ReturnsValidationError()
+    {
+        // Arrange
+        int? value = MinValue - 1;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MinValue, maxValue: MaxValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public void Validate_WhenAboveMaxValue_ReturnsValidationError()
+    {
+        // Arrange
+        int value = MaxValue + 1;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MinValue, maxValue: MaxValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+        result.ErrorDetails!.Errors.Should().ContainSingle()
+            .Which.Should().Be("Quantity cannot be greater than 100");
+    }
+
+    [Fact]
+    public void Validate_WhenNullableValueIsAboveMaxValue_ReturnsValidationError()
+    {
+        // Arrange
+        int? value = MaxValue + 1;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MinValue, maxValue: MaxValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public void Validate_WhenNullableValueIsNullAndRequired_ReturnsValidationError()
+    {
+        // Arrange
+        int? value = null;
+
+        // Act
+        Result result = value.Validate(FieldName, isRequired: true);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+        result.ErrorDetails!.Errors.Should().ContainSingle()
+            .Which.Should().Be("Quantity cannot be null");
+    }
+
+    [Fact]
+    public void Validate_WhenSeveralRulesAreBroken_ReturnsOneErrorPerRule()
+    {
+        // Arrange
+        int value = -1;
+
+        // Act
+        Result result = value.Validate(FieldName, minValue: MinValue, maxValue: MaxValue);
+
+        // Assert
+        AssertFailureResult(result, HttpStatusCode.UnprocessableEntity);
+        result.ErrorDetails!.Errors.Should().HaveCount(2);
+    }
+}

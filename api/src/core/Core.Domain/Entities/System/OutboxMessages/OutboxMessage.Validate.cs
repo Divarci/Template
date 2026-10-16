@@ -20,6 +20,9 @@ public sealed partial class OutboxMessage
     {
         results.AddRange(
             [
+                message.Id.Validate(
+                    fieldName: nameof(message.Id),
+                    allowEmpty: false),
                 message.Type.Validate(
                     fieldName: nameof(message.Type),
                     maxLength: 2000),

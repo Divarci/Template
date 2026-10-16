@@ -18,6 +18,11 @@ public static class StringValidator
         bool isRequired = true,
         bool isEmail = false)
     {
+        if (string.IsNullOrWhiteSpace(fieldName))
+            return Result.Failure(
+                message: $"{nameof(fieldName)} can not be null or empty",
+                statusCode: HttpStatusCode.InternalServerError);
+
         List<string> validationErrors = [];
 
         if (isRequired && string.IsNullOrWhiteSpace(value))
